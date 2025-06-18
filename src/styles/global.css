@@ -507,6 +507,14 @@ body {
     width: 100%;
     box-sizing: border-box;
   }
+  .table-actions {
+    justify-content: flex-start;
+    gap: 0.3em;
+  }
+  .invoice-table td[data-label="Actions"] {
+    justify-content: flex-start;
+    padding-left: 0;
+  }
 }
 
 @media (max-width: 480px) {
@@ -642,5 +650,28 @@ body {
   .wrap-cell {
     max-width: 100%;
     font-size: 1em;
+  }
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.delete-icon {
+  display: none;
+}
+@media (max-width: 600px) {
+  .delete-text {
+    display: none;
+  }
+  .delete-icon {
+    display: inline-block;
+    vertical-align: middle;
   }
 }

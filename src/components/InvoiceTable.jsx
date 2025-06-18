@@ -31,10 +31,6 @@ export default function InvoiceTable({ invoices, onDelete }) {
         const imgHeight = (imgProps.height * imgWidth) / imgProps.width;
         const finalImgHeight = imgHeight > (pageHeight - 2 * margin) ? (pageHeight - 2 * margin) : imgHeight;
         pdf.addImage(imgData, 'PNG', margin, margin, imgWidth, finalImgHeight);
-        pdf.setFont('helvetica', 'bold');
-        pdf.setFontSize(24);
-        pdf.setTextColor(34, 34, 34);
-        pdf.text(`Invoice #${invoice.invoiceNumber}`, pageWidth / 2, margin - 10, { align: 'center' });
         pdf.save(`invoice-${invoice.invoiceNumber || 'export'}.pdf`);
         root.unmount();
         document.body.removeChild(container);
@@ -140,8 +136,15 @@ export default function InvoiceTable({ invoices, onDelete }) {
                   <button
                     onClick={() => onDelete(invoice.id)}
                     className="action-btn delete"
+                    title="Delete"
                   >
-                    Delete
+                    <span className="sr-only">Delete</span>
+                    <span className="delete-icon" aria-hidden="true">
+                      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M6 8V14M10 8V14M14 8V14M3 5H17M5 5V4C5 2.89543 5.89543 2 7 2H13C14.1046 2 15 2.89543 15 4V5M8 10V14M12 10V14" stroke="#b91c1c" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </span>
+                    <span className="delete-text">Delete</span>
                   </button>
                 </div>
               </td>

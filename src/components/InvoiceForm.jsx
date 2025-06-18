@@ -138,7 +138,7 @@ export default function InvoiceForm({ onSave, clients = [], items = [], initialD
       <div className="form-grid">
         <div>
           <label className="form-label">{isQuote ? 'Quote Number' : 'Invoice Number'}</label>
-          <input className="form-input" name="invoiceNumber" value={invoice.invoiceNumber} onChange={handleChange} required />
+          <input className="form-input" name="invoiceNumber" value={invoice.invoiceNumber} onChange={handleChange} />
         </div>
         <div>
           <label className="form-label">Date</label>
@@ -146,18 +146,18 @@ export default function InvoiceForm({ onSave, clients = [], items = [], initialD
         </div>
         <div>
           <label className="form-label">Due Date</label>
-          <input className="form-input" type="date" name="dueDate" value={invoice.dueDate} onChange={handleChange} required />
+          <input className="form-input" type="date" name="dueDate" value={invoice.dueDate} onChange={handleChange} />
         </div>
       </div>
       <h3 className="form-section-title">Sender Info</h3>
       <div className="form-grid">
         <div>
           <label className="form-label">Your Name</label>
-          <input className="form-input" name="name" value={invoice.sender.name} onChange={handleSenderChange} required />
+          <input className="form-input" name="name" value={invoice.sender.name} onChange={handleSenderChange} />
         </div>
         <div>
           <label className="form-label">Business Name</label>
-          <input className="form-input" name="businessName" value={invoice.sender.businessName} onChange={handleSenderChange} />
+          <input className="form-input" name="businessName" value={invoice.sender.businessName} onChange={handleSenderChange} required />
         </div>
         <div className="form-grid-full">
           <label className="form-label">Address</label>
@@ -185,7 +185,7 @@ export default function InvoiceForm({ onSave, clients = [], items = [], initialD
         </div>
         <div>
           <label className="form-label">Client Email</label>
-          <input className="form-input" name="email" value={invoice.recipient.email} onChange={handleRecipientChange} required />
+          <input className="form-input" name="email" value={invoice.recipient.email} onChange={handleRecipientChange} />
         </div>
         <div className="form-grid-full">
           <label className="form-label">Client Address</label>
@@ -248,7 +248,7 @@ export default function InvoiceForm({ onSave, clients = [], items = [], initialD
                               min="0"
                               step="0.01"
                               name="unitPrice"
-                              value={item.unitPrice}
+                              value={item.unitPrice === 0 ? '' : item.unitPrice}
                               autoComplete="off"
                               onChange={e => handleLineItemChange(idx, e)}
                               list={`price-suggestions-${idx}`}
@@ -267,7 +267,7 @@ export default function InvoiceForm({ onSave, clients = [], items = [], initialD
                               min="0"
                               step="0.01"
                               name="tax"
-                              value={item.tax}
+                              value={item.tax === 0 ? '' : item.tax}
                               onChange={e => handleLineItemChange(idx, e)}
                             />
                           </td>

@@ -42,11 +42,7 @@ export default function InvoiceView() {
     const imgHeight = (imgProps.height * imgWidth) / imgProps.width;
     const finalImgHeight = imgHeight > (pageHeight - 2 * margin) ? (pageHeight - 2 * margin) : imgHeight;
     pdf.addImage(imgData, 'PNG', margin, margin, imgWidth, finalImgHeight);
-    // Overlay the invoice number as selectable text at the top
-    pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(24);
-    pdf.setTextColor(34, 34, 34);
-    pdf.text(`Invoice #${invoice.invoiceNumber}`, pageWidth / 2, margin - 10, { align: 'center' });
+    // pdf.text(`Invoice #${invoice.invoiceNumber}`, pageWidth / 2, margin - 10, { align: 'center' }); // Removed duplicate title
     pdf.save(`invoice-${invoice.invoiceNumber || 'export'}.pdf`);
   };
 
@@ -57,7 +53,7 @@ export default function InvoiceView() {
     <div className="container">
       <div className="invoice-details-card">
         <div className="invoice-details-header">
-          <h2 className="page-title">Invoice #{invoice.invoiceNumber}</h2>
+          <h2 className="page-title">{(invoice.type === 'quote' || invoice.status === 'quote') ? 'Quote' : 'Invoice'} #{invoice.invoiceNumber}</h2>
           <button className="btn-primary" onClick={handleExportPDF}>Export to PDF</button>
         </div>
         <div ref={pdfRef} className="invoice-details-content">
