@@ -1,0 +1,646 @@
+/* Modern global styles for Invoice App (Vanilla CSS) */
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+  background: #f6f8fa;
+  color: #1a202c;
+  margin: 0;
+  min-height: 100vh;
+}
+
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2em 1em;
+}
+
+.card {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  border: 1px solid #e5e7eb;
+  padding: 2em;
+  margin: 1em 0;
+}
+
+.btn-primary {
+  background: #2563eb;
+  color: #fff;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  padding: 0.75em 1.5em;
+  font-size: 1em;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.btn-primary:hover {
+  background: #1d4ed8;
+}
+
+.btn-secondary {
+  background: #f3f4f6;
+  color: #1a202c;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 0.75em 1.5em;
+  font-size: 1em;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.btn-secondary:hover {
+  background: #e5e7eb;
+}
+
+.form-input {
+  width: 100%;
+  padding: 0.5em 1em;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #fff;
+  font-size: 1em;
+  margin-bottom: 1em;
+  transition: border 0.2s;
+}
+.form-input:focus {
+  border-color: #2563eb;
+}
+
+.text-center { text-align: center; }
+.mt-2 { margin-top: 0.5em; }
+.mt-4 { margin-top: 1em; }
+.mt-8 { margin-top: 2em; }
+.mb-2 { margin-bottom: 0.5em; }
+.mb-4 { margin-bottom: 1em; }
+.mb-8 { margin-bottom: 2em; }
+.my-8 { margin-top: 2em; margin-bottom: 2em; }
+.p-4 { padding: 1em; }
+.rounded-lg { border-radius: 12px; }
+.shadow-lg { box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+.bg-green { background: #22c55e; color: #fff; }
+
+/* Layout and utility classes for vanilla CSS migration */
+.centered-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f6f8fa;
+}
+.loading-container {
+  text-align: center;
+}
+.spinner {
+  margin: 0 auto;
+  border: 4px solid #e5e7eb;
+  border-top: 4px solid #2563eb;
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+.loading-text {
+  margin-top: 1em;
+  color: #6b7280;
+}
+.dashboard-container {
+  min-height: 100vh;
+  background: #f6f8fa;
+}
+.header-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 1.5em;
+}
+.header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5em 0;
+}
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 1.5em;
+}
+.back-link {
+  color: #2563eb;
+  text-decoration: none;
+  font-weight: 500;
+  margin-right: 1em;
+  transition: color 0.2s;
+}
+.back-link:hover {
+  color: #1d4ed8;
+}
+.page-title {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #1a202c;
+  margin: 0;
+}
+.primary-btn {
+  background: #2563eb;
+  color: #fff;
+  padding: 0.5em 1.5em;
+  border-radius: 8px;
+  font-size: 1em;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s;
+  text-decoration: none;
+  display: inline-block;
+}
+.primary-btn:hover {
+  background: #1d4ed8;
+}
+.filter-card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  padding: 1.5em;
+  margin-bottom: 2em;
+}
+.filter-btn-group {
+  display: flex;
+  gap: 1em;
+}
+.filter-btn {
+  padding: 0.5em 1.5em;
+  border-radius: 6px;
+  font-size: 1em;
+  font-weight: 500;
+  border: none;
+  background: #f3f4f6;
+  color: #1a202c;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+.filter-btn:hover {
+  background: #e5e7eb;
+}
+.filter-btn.active.all {
+  background: #2563eb;
+  color: #fff;
+}
+.filter-btn.active.pending {
+  background: #eab308;
+  color: #fff;
+}
+.filter-btn.active.paid {
+  background: #22c55e;
+  color: #fff;
+}
+.filter-btn.active.overdue {
+  background: #ef4444;
+  color: #fff;
+}
+.table-card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  padding: 1.5em;
+}
+
+/* Invoice Table styles */
+.table-responsive {
+  overflow-x: auto;
+}
+.invoice-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  border-radius: 10px;
+  overflow: hidden;
+  font-size: 1em;
+}
+.invoice-table th, .invoice-table td {
+  padding: 1em 1.5em;
+  text-align: left;
+  border-bottom: 1px solid #f1f1f1;
+}
+.invoice-table th {
+  background: #f3f4f6;
+  color: #6b7280;
+  font-size: 0.95em;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.invoice-table tr:last-child td {
+  border-bottom: none;
+}
+.invoice-table tr:hover {
+  background: #f9fafb;
+}
+.client-name {
+  color: #1a202c;
+  font-weight: 500;
+}
+.client-email {
+  color: #6b7280;
+  font-size: 0.95em;
+}
+.status-badge {
+  display: inline-block;
+  padding: 0.3em 1em;
+  border-radius: 999px;
+  font-size: 0.9em;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+.status-badge.paid {
+  background: #dcfce7;
+  color: #15803d;
+}
+.status-badge.pending {
+  background: #fef9c3;
+  color: #b45309;
+}
+.status-badge.overdue {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+.status-badge.draft {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+.table-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5em;
+}
+.action-btn {
+  padding: 0.3em 1em;
+  border-radius: 6px;
+  font-size: 0.95em;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.2s, color 0.2s;
+}
+.action-btn.view {
+  background: #dbeafe;
+  color: #2563eb;
+}
+.action-btn.view:hover {
+  background: #2563eb;
+  color: #fff;
+}
+.action-btn.edit {
+  background: #bbf7d0;
+  color: #15803d;
+}
+.action-btn.edit:hover {
+  background: #15803d;
+  color: #fff;
+}
+.action-btn.delete {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+.action-btn.delete:hover {
+  background: #b91c1c;
+  color: #fff;
+}
+.table-empty {
+  text-align: center;
+  padding: 3em 1em;
+}
+.table-empty-icon {
+  width: 48px;
+  height: 48px;
+  color: #cbd5e1;
+  margin-bottom: 1em;
+}
+.table-empty-text {
+  color: #6b7280;
+  margin-bottom: 1em;
+}
+.text-right {
+  text-align: right;
+}
+
+/* Layout and navigation for Layout.jsx */
+.nav-desktop {
+  display: flex;
+  gap: 2em;
+}
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  padding: 0.5em 1em;
+  border-radius: 6px;
+  font-size: 1em;
+  color: #4b5563;
+  text-decoration: none;
+  font-weight: 500;
+  transition: background 0.2s, color 0.2s;
+}
+.nav-link:hover {
+  background: #f3f4f6;
+  color: #1a202c;
+}
+.nav-link.active {
+  background: #dbeafe;
+  color: #2563eb;
+}
+.nav-icon {
+  width: 20px;
+  height: 20px;
+  color: inherit;
+}
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 1.5em;
+}
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75em;
+}
+.user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.user-welcome {
+  font-size: 0.95em;
+  color: #4b5563;
+}
+.user-name {
+  font-weight: 600;
+  color: #1a202c;
+}
+.logout-btn {
+  background: #ef4444;
+  color: #fff;
+  padding: 0.5em 1.2em;
+  border-radius: 8px;
+  font-size: 1em;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.logout-btn:hover {
+  background: #b91c1c;
+}
+
+/* Mobile navigation */
+.nav-mobile {
+  display: none;
+  border-top: 1px solid #e5e7eb;
+}
+.nav-mobile-inner {
+  padding: 1em 0.5em;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+}
+@media (max-width: 900px) {
+  .nav-desktop {
+    display: none;
+  }
+  .nav-mobile {
+    display: block;
+  }
+}
+
+/* Responsive helpers */
+@media (max-width: 600px) {
+  .container, .card, .invoice-details-card, .table-card {
+    padding: 1em;
+    max-width: 100vw;
+    border-radius: 0;
+    margin: 0;
+  }
+  .invoice-details-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1em;
+  }
+  .invoice-details-content {
+    font-size: 1em;
+  }
+  .invoice-table, .invoice-table th, .invoice-table td {
+    font-size: 0.95em;
+    padding: 0.5em 0.5em;
+  }
+  .invoice-table {
+    display: block;
+    width: 100%;
+    border: none;
+    background: none;
+  }
+  .invoice-table thead {
+    display: none;
+  }
+  .invoice-table tbody {
+    display: flex;
+    flex-direction: column;
+    gap: 1em;
+  }
+  .invoice-table tr {
+    display: block;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    padding: 1em;
+    margin-bottom: 0.5em;
+  }
+  .invoice-table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5em 0;
+    border: none;
+    font-size: 1em;
+  }
+  .invoice-table td:before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: #6b7280;
+    flex: 1;
+    margin-right: 1em;
+    min-width: 90px;
+  }
+  .form-card {
+    padding: 1em;
+    max-width: 100vw;
+    border-radius: 0;
+    margin: 0;
+  }
+  .form-grid {
+    grid-template-columns: 1fr;
+    gap: 1em;
+  }
+  .form-actions {
+    flex-direction: column;
+    gap: 0.5em;
+    align-items: stretch;
+  }
+  .page-title {
+    font-size: 1.3em;
+  }
+  .filter-btn-group {
+    flex-direction: column;
+    gap: 0.5em;
+    align-items: stretch;
+  }
+  .header-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.8em;
+  }
+  .primary-btn {
+    margin-top: 0.5em;
+    width: 100%;
+    box-sizing: border-box;
+  }
+}
+
+@media (max-width: 480px) {
+  .invoice-details-card, .form-card, .table-card {
+    padding: 0.5em;
+  }
+  .invoice-table th, .invoice-table td {
+    font-size: 0.9em;
+    padding: 0.3em 0.3em;
+  }
+  .page-title {
+    font-size: 1.1em;
+  }
+}
+
+/* Minimal modal styles for edit dialogs */
+.modal-backdrop {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.2);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.modal {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.12);
+  padding: 2em 2em 1.5em 2em;
+  min-width: 320px;
+  max-width: 90vw;
+}
+
+/* Invoice Details styles */
+.invoice-details-card {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  padding: 2em;
+  margin: 2em auto;
+  max-width: 800px;
+}
+.invoice-details-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5em;
+}
+.invoice-details-content {
+  font-size: 1.1em;
+}
+.invoice-details-section {
+  margin-bottom: 1.5em;
+}
+
+/* Spreadsheet-style line items table */
+.line-items-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+.line-items-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  margin-bottom: 0.5em;
+}
+.line-items-table th, .line-items-table td {
+  border: 1px solid #e5e7eb;
+  padding: 0.5em 0.5em;
+  text-align: left;
+  vertical-align: middle;
+}
+.line-items-table th {
+  background: #f3f4f6;
+  font-weight: 600;
+}
+.line-items-table .form-input {
+  min-width: 80px;
+  font-size: 1em;
+  padding: 0.4em 0.6em;
+}
+.drag-handle {
+  cursor: grab;
+  font-size: 1.2em;
+  color: #888;
+  text-align: center;
+  width: 2em;
+}
+@media (max-width: 700px) {
+  .line-items-table, .line-items-table thead, .line-items-table tbody, .line-items-table tr {
+    display: block;
+    width: 100%;
+  }
+  .line-items-table thead {
+    display: none;
+  }
+  .line-items-table tr {
+    margin-bottom: 1em;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    border: 1px solid #e5e7eb;
+    padding: 0.5em 0.5em 0.5em 0.5em;
+  }
+  .line-items-table td {
+    display: flex;
+    align-items: center;
+    border: none;
+    border-bottom: 1px solid #e5e7eb;
+    padding: 0.5em 0;
+  }
+  .line-items-table td:before {
+    content: attr(data-label);
+    flex: 0 0 110px;
+    font-weight: 600;
+    color: #555;
+    margin-right: 0.5em;
+    font-size: 0.95em;
+  }
+  .drag-handle {
+    order: -1;
+    margin-right: 0.5em;
+  }
+}
+.wrap-cell {
+  white-space: pre-line;
+  word-break: break-word;
+  max-width: 320px;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 700px) {
+  .wrap-cell {
+    max-width: 100%;
+    font-size: 1em;
+  }
+}
