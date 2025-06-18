@@ -43,7 +43,6 @@ export const invoiceService = {
       querySnapshot.forEach((doc) => {
         invoices.push({ id: doc.id, ...doc.data() });
       });
-      console.log('Fetched invoices:', invoices); // Debug log
       return invoices;
     } catch (error) {
       console.error('Error fetching invoices:', error);
