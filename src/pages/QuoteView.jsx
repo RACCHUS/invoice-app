@@ -1,34 +1,41 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { invoiceService } from '../services/InvoiceServices';
 import { generateInvoicePDF } from '../utils/pdfGenerator';
 
-export default function InvoiceView() {
+export default function QuoteView() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [invoice, setInvoice] = useState(null);
+  const [quote, setQuote] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchInvoice = async () => {
+    const fetchQuote = async () => {
       try {
-        const inv = await invoiceService.getInvoiceById(id);
-        if (!inv) navigate('/invoices');
-        setInvoice(inv);
+        const quoteData = await invoiceService.getInvoiceById(id);
+        if (!quoteData) {
+          navigate('/quotes');
+          return;
+        }
+        // Ensure it's actually a quote
+        if (quoteData.type !== 'quote' && quoteData.status !== 'quote') {
+          navigate('/quotes');
+          return;
+        }
+        setQuote(quoteData);
       } catch (e) {
-        navigate('/invoices');
+        navigate('/quotes');
       } finally {
         setLoading(false);
       }
     };
-    fetchInvoice();
+    fetchQuote();
   }, [id, navigate]);
 
   const handleExportPDF = async () => {
     try {
-      const pdf = generateInvoicePDF(invoice);
-      const label = invoice.type === 'quote' || invoice.status === 'quote' ? 'quote' : 'invoice';
-      pdf.save(`${label}-${invoice.invoiceNumber || 'export'}.pdf`);
+      const pdf = generateInvoicePDF(quote);
+      pdf.save(`quote-${quote.invoiceNumber || 'export'}.pdf`);
     } catch (error) {
       console.error('Error generating PDF:', error);
       alert('Failed to generate PDF. Please try again.');
@@ -40,17 +47,17 @@ export default function InvoiceView() {
     
     try {
       const updatedData = {
-        ...invoice,
+        ...quote,
         type: 'invoice',
         status: 'pending',
         // Generate new invoice number if needed
-        invoiceNumber: invoice.invoiceNumber || `INV-${Date.now().toString().slice(-6)}`
+        invoiceNumber: quote.invoiceNumber || `INV-${Date.now().toString().slice(-6)}`
       };
       delete updatedData.id; // Remove id from update data
       
       await invoiceService.updateInvoice(id, updatedData);
-      setInvoice(updatedData);
       alert('Quote successfully converted to invoice!');
+      navigate('/invoices');
     } catch (error) {
       console.error('Error converting quote:', error);
       alert('Failed to convert quote to invoice.');
@@ -58,42 +65,40 @@ export default function InvoiceView() {
   };
 
   if (loading) return <div className="centered-screen"><div className="spinner"></div></div>;
-  if (!invoice) return null;
+  if (!quote) return null;
 
   return (
     <div className="container">
       <div className="invoice-details-card">
         <div className="invoice-details-header">
-          <h2 className="page-title">{(invoice.type === 'quote' || invoice.status === 'quote') ? 'Quote' : 'Invoice'} #{invoice.invoiceNumber}</h2>
+          <h2 className="page-title">Quote #{quote.invoiceNumber}</h2>
           <div style={{ display: 'flex', gap: '1rem' }}>
-            {(invoice.type === 'quote' || invoice.status === 'quote') && (
-              <button className="btn-secondary" onClick={handleConvertToInvoice}>
-                Convert to Invoice
-              </button>
-            )}
+            <button className="btn-secondary" onClick={handleConvertToInvoice}>
+              Convert to Invoice
+            </button>
             <button className="btn-primary" onClick={handleExportPDF}>Export to PDF</button>
           </div>
         </div>
         <div className="invoice-details-content">
           <div className="invoice-details-section">
-            <strong>Date:</strong> {invoice.date}<br />
-            <strong>Due Date:</strong> {invoice.dueDate}
+            <strong>Date:</strong> {quote.date}<br />
+            <strong>Valid Until:</strong> {quote.dueDate}
           </div>
           <div className="invoice-details-section">
-            <strong>Sender:</strong><br />
-            {invoice.sender?.businessName && <>{invoice.sender.businessName}<br /></>}
-            {invoice.sender?.name}<br />
-            {invoice.sender?.address}<br />
-            {invoice.sender?.phone}
+            <strong>From:</strong><br />
+            {quote.sender?.businessName && <>{quote.sender.businessName}<br /></>}
+            {quote.sender?.name}<br />
+            {quote.sender?.address}<br />
+            {quote.sender?.phone}
           </div>
           <div className="invoice-details-section">
-            <strong>Recipient:</strong><br />
-            {invoice.recipient?.name}<br />
-            {invoice.recipient?.address}<br />
-            {invoice.recipient?.email}
+            <strong>To:</strong><br />
+            {quote.recipient?.name}<br />
+            {quote.recipient?.address}<br />
+            {quote.recipient?.email}
           </div>
           <div className="invoice-details-section">
-            <strong>Status:</strong> {invoice.status}
+            <strong>Status:</strong> Quote
           </div>
           <div className="invoice-details-section">
             <strong>Line Items:</strong>
@@ -108,7 +113,7 @@ export default function InvoiceView() {
                 </tr>
               </thead>
               <tbody>
-                {invoice.lineItems?.map((item, idx) => (
+                {quote.lineItems?.map((item, idx) => (
                   <tr key={idx}>
                     <td className="wrap-cell">{item.description}</td>
                     <td>{item.quantity}</td>
@@ -121,14 +126,14 @@ export default function InvoiceView() {
             </table>
           </div>
           <div className="invoice-details-section" style={{ textAlign: 'right', marginTop: 16 }}>
-            <strong>Subtotal:</strong> ${invoice.lineItems?.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0).toFixed(2)}<br />
-            <strong>Tax:</strong> ${invoice.lineItems?.reduce((sum, item) => sum + (item.quantity * item.unitPrice * (item.tax || 0) / 100), 0).toFixed(2)}<br />
-            <strong>Total:</strong> ${invoice.lineItems?.reduce((sum, item) => sum + item.quantity * item.unitPrice * (1 + (item.tax || 0) / 100), 0).toFixed(2)}
+            <strong>Subtotal:</strong> ${quote.lineItems?.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0).toFixed(2)}<br />
+            <strong>Tax:</strong> ${quote.lineItems?.reduce((sum, item) => sum + (item.quantity * item.unitPrice * (item.tax || 0) / 100), 0).toFixed(2)}<br />
+            <strong>Total:</strong> ${quote.lineItems?.reduce((sum, item) => sum + item.quantity * item.unitPrice * (1 + (item.tax || 0) / 100), 0).toFixed(2)}
           </div>
-          {invoice.notes && (
+          {quote.notes && (
             <div className="invoice-details-section">
               <strong>Notes:</strong><br />
-              {invoice.notes}
+              {quote.notes}
             </div>
           )}
         </div>

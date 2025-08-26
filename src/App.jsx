@@ -11,6 +11,7 @@ import Clients from './pages/Clients';
 import Items from './pages/Items';
 import Quotes from './pages/Quotes';
 import QuoteCreate from './pages/QuoteCreate';
+import QuoteView from './pages/QuoteView';
 import QuoteEdit from './pages/QuoteEdit';
 import './styles/global.css';
 
@@ -95,6 +96,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <QuoteCreate />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/quotes/:id" 
+              element={
+                <ProtectedRoute>
+                  <QuoteView />
                 </ProtectedRoute>
               } 
             />

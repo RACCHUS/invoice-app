@@ -36,10 +36,9 @@ export const getStatusColor = (status) => {
     paid: 'bg-green-100 text-green-800',
     pending: 'bg-yellow-100 text-yellow-800',
     overdue: 'bg-red-100 text-red-800',
-    draft: 'bg-gray-100 text-gray-800',
     cancelled: 'bg-gray-100 text-gray-800'
   };
-  return colors[status] || colors.draft;
+  return colors[status] || colors.pending;
 };
 
 // Calculate due date

@@ -17,7 +17,7 @@ export default function InvoiceForm({ onSave, clients = [], items = [], initialD
       { description: '', quantity: 1, unitPrice: 0, tax: 0 }
     ],
     notes: initialData?.notes || '',
-    status: initialData?.status || 'draft',
+    status: initialData?.status || 'pending',
   });
 
   // Sync form state with initialData when editing
@@ -31,7 +31,7 @@ export default function InvoiceForm({ onSave, clients = [], items = [], initialD
         recipient: initialData.recipient || { name: '', address: '', email: '' },
         lineItems: initialData.lineItems || [{ description: '', quantity: 1, unitPrice: 0, tax: 0 }],
         notes: initialData.notes || '',
-        status: initialData.status || 'draft',
+        status: initialData.status || 'pending',
       });
     }
   }, [initialData]);

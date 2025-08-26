@@ -266,9 +266,9 @@ body {
   background: #fee2e2;
   color: #b91c1c;
 }
-.status-badge.draft {
-  background: #f3f4f6;
-  color: #6b7280;
+.status-badge.quote {
+  background: #e0e7ff;
+  color: #3730a3;
 }
 .table-actions {
   display: flex;
@@ -299,6 +299,14 @@ body {
 }
 .action-btn.edit:hover {
   background: #15803d;
+  color: #fff;
+}
+.action-btn.convert {
+  background: #e0e7ff;
+  color: #3730a3;
+}
+.action-btn.convert:hover {
+  background: #3730a3;
   color: #fff;
 }
 .action-btn.delete {

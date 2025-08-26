@@ -7,7 +7,13 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "start:client": "vite",
+    "start:emulators": "firebase emulators:start",
+    "start:dev": "concurrently \"npm run start:client\" \"npm run start:emulators\" --names \"CLIENT,FIREBASE\" --prefix-colors \"cyan,yellow\"",
+    "deploy": "npm run build && firebase deploy",
+    "clean": "rm -rf dist build node_modules/.vite",
+    "reinstall": "rm -rf node_modules package-lock.json && npm install"
   },
   "dependencies": {
     "@hello-pangea/dnd": "^18.0.1",
@@ -23,6 +29,7 @@
     "@types/react": "^19.1.2",
     "@types/react-dom": "^19.1.2",
     "@vitejs/plugin-react": "^4.4.1",
+    "concurrently": "^9.2.1",
     "eslint": "^9.25.0",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.19",

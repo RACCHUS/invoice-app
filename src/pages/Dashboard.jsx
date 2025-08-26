@@ -258,7 +258,7 @@ export default function Dashboard() {
                         <td style={{ padding: '16px 24px', color: '#1a202c' }}>{formatCurrency(invoice.total || 0)}</td>
                         <td style={{ padding: '16px 24px' }}>
                           <span style={{ display: 'inline-block', padding: '4px 12px', fontSize: 13, fontWeight: 600, borderRadius: 12, background: invoice.status === 'paid' ? '#bbf7d0' : invoice.status === 'pending' ? '#fef9c3' : '#fee2e2', color: invoice.status === 'paid' ? '#15803d' : invoice.status === 'pending' ? '#b45309' : '#b91c1c' }}>
-                            {invoice.status || 'draft'}
+                            {invoice.status || 'pending'}
                           </span>
                         </td>
                         <td style={{ padding: '16px 24px', color: '#6b7280' }}>{invoice.createdAt ? formatDate(invoice.createdAt) : 'N/A'}</td>

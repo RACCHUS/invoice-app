@@ -30,6 +30,39 @@ export default function Quotes() {
     fetchQuotes();
   }, [currentUser]);
 
+  const handleDeleteQuote = async (quoteId) => {
+    if (window.confirm('Are you sure you want to delete this quote?')) {
+      try {
+        await invoiceService.deleteInvoice(quoteId);
+        setQuotes(quotes.filter(q => q.id !== quoteId));
+      } catch (error) {
+        console.error('Error deleting quote:', error);
+        alert('Failed to delete quote');
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (!currentUser) return;
+    const fetchQuotes = async () => {
+      setLoading(true);
+      try {
+        const all = await invoiceService.getInvoices(currentUser.uid);
+        setQuotes(all.filter(q => q.type === 'quote' || q.status === 'quote'));
+      } catch (e) {
+        setQuotes([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchQuotes();
+  }, [currentUser]);
+
+  const handleConvertToInvoice = (quoteId, convertedData) => {
+    // Remove the converted quote from the quotes list
+    setQuotes(quotes.filter(q => q.id !== quoteId));
+  };
+
   // Get unique client names for filter dropdown
   const clientNames = Array.from(new Set(quotes.map(q => q.recipient?.name || q.clientName).filter(Boolean)));
 
@@ -162,7 +195,11 @@ export default function Quotes() {
         </div>
         {/* Quotes Table */}
         <div className="table-card">
-          <InvoiceTable invoices={sortedQuotes} />
+          <InvoiceTable 
+            invoices={sortedQuotes} 
+            onDelete={handleDeleteQuote} 
+            onConvertToInvoice={handleConvertToInvoice}
+          />
         </div>
       </main>
     </div>
