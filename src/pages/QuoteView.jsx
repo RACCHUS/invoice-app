@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { invoiceService } from '../services/InvoiceServices';
 import { generateInvoicePDF } from '../utils/pdfGenerator';
-import { locationGroupHeading } from '../utils/invoiceData';
+import { cleanText, locationGroupHeading, normalizeInvoice } from '../utils/invoiceData';
+import DetailBlock from '../components/DetailBlock';
 
 export default function QuoteView() {
   const { id } = useParams();
@@ -25,7 +26,7 @@ export default function QuoteView() {
           navigate('/quotes');
           return;
         }
-        setQuote(quoteData);
+        setQuote(normalizeInvoice(quoteData));
       } catch (e) {
         console.error('Error loading quote:', e);
         setError(`Failed to load quote: ${e.message}`);
@@ -80,27 +81,14 @@ export default function QuoteView() {
           </div>
         </div>
         <div className="invoice-details-content">
-          <div className="invoice-details-section">
-            <strong>Date:</strong> {quote.date}<br />
-            <strong>Valid Until:</strong> {quote.dueDate}
-          </div>
-          <div className="invoice-details-section">
-            <strong>From:</strong><br />
-            {quote.sender?.businessName && <>{quote.sender.businessName}<br /></>}
-            {quote.sender?.name}<br />
-            {quote.sender?.address}<br />
-            {quote.sender?.phone}
-          </div>
-          <div className="invoice-details-section">
-            <strong>To:</strong><br />
-            {quote.recipient?.name}<br />
-            {quote.recipient?.address}<br />
-            {quote.recipient?.email}
-          </div>
-          {quote.jobSite && <div className="invoice-details-section">
-            <strong>Job Site:</strong><br />
-            {quote.jobSite}
+          {(cleanText(quote.date) || cleanText(quote.dueDate)) && <div className="invoice-details-section">
+            {cleanText(quote.date) && <><strong>Date:</strong> {quote.date}</>}
+            {cleanText(quote.date) && cleanText(quote.dueDate) && <br />}
+            {cleanText(quote.dueDate) && <><strong>Valid Until:</strong> {quote.dueDate}</>}
           </div>}
+          <DetailBlock title="From" values={[quote.sender?.businessName, quote.sender?.name, quote.sender?.address, quote.sender?.phone]} />
+          <DetailBlock title="To" values={[quote.recipient?.name, quote.recipient?.address, quote.recipient?.email]} />
+          <DetailBlock title="Job Site" values={[quote.jobSite]} />
           <div className="invoice-details-section">
             <strong>Status:</strong> Quote
           </div>
@@ -135,16 +123,13 @@ export default function QuoteView() {
             </table>
           </div>
           <div className="invoice-details-section" style={{ textAlign: 'right', marginTop: 16 }}>
-            <strong>Subtotal:</strong> ${quote.lineItems?.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0).toFixed(2)}<br />
-            <strong>Tax:</strong> ${quote.lineItems?.reduce((sum, item) => sum + (item.quantity * item.unitPrice * (item.tax || 0) / 100), 0).toFixed(2)}<br />
-            <strong>Total:</strong> ${quote.lineItems?.reduce((sum, item) => sum + item.quantity * item.unitPrice * (1 + (item.tax || 0) / 100), 0).toFixed(2)}
+            {quote.totalTax > 0 && <>
+              <strong>Subtotal:</strong> ${(quote.subtotal || 0).toFixed(2)}<br />
+              <strong>Tax:</strong> ${quote.totalTax.toFixed(2)}<br />
+            </>}
+            <strong>Total:</strong> ${(quote.total || 0).toFixed(2)}
           </div>
-          {quote.notes && (
-            <div className="invoice-details-section">
-              <strong>Notes:</strong><br />
-              {quote.notes}
-            </div>
-          )}
+          <DetailBlock title="Notes" values={[quote.notes]} />
         </div>
       </div>
     </div>

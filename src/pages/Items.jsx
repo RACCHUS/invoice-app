@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { itemService } from '../services/itemService';
 import { useAuth } from '../contexts/AuthContext';
+import { friendlyError } from '../utils/errors';
 
 function EditItemModal({ item, onSave, onClose }) {
   const [form, setForm] = useState({ description: '', unitPrice: 0, tax: 0, ...item });
@@ -46,6 +47,7 @@ export default function Items() {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(null);
   const [error, setError] = useState('');
+  const [deletingId, setDeletingId] = useState(null);
 
   useEffect(() => {
     if (!currentUser) return;
@@ -56,13 +58,16 @@ export default function Items() {
   }, [currentUser]);
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Delete this item?')) return;
+    if (deletingId || !window.confirm('Delete this item?')) return;
+    setDeletingId(id);
+    setError('');
     try {
       await itemService.deleteItem(id);
       setItems(prev => prev.filter(i => i.id !== id));
     } catch (error) {
-      console.error('Error deleting item:', error);
-      setError(`Failed to delete item: ${error.message}`);
+      setError(friendlyError('delete the item', error));
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -104,7 +109,7 @@ export default function Items() {
               <td data-label="Tax (%)">{item.tax || 0}</td>
               <td data-label="Actions">
                 <button className="action-btn edit" onClick={() => handleEdit(item)}>Edit</button>
-                <button className="action-btn delete" onClick={() => handleDelete(item.id)}>Delete</button>
+                <button className="action-btn delete" disabled={deletingId === item.id} onClick={() => handleDelete(item.id)}>{deletingId === item.id ? 'Deleting...' : 'Delete'}</button>
               </td>
             </tr>
           ))}

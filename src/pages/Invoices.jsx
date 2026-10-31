@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { invoiceService } from '../services/InvoiceServices';
 import InvoiceTable from '../components/InvoiceTable';
 import { isQuote, normalizeInvoice } from '../utils/invoiceData';
+import { friendlyError } from '../utils/errors';
 
 export default function Invoices() {
   const [invoices, setInvoices] = useState([]);
@@ -15,6 +16,7 @@ export default function Invoices() {
   const [clientFilter, setClientFilter] = useState('');
   const [sortBy, setSortBy] = useState('date');
   const [sortDir, setSortDir] = useState('desc');
+  const [deletingId, setDeletingId] = useState(null);
   
   const { currentUser } = useAuth();
 
@@ -36,14 +38,16 @@ export default function Invoices() {
   };
 
   const handleDeleteInvoice = async (invoiceId) => {
-    if (window.confirm('Are you sure you want to delete this invoice?')) {
-      try {
-        await invoiceService.deleteInvoice(invoiceId);
-        setInvoices(invoices.filter(inv => inv.id !== invoiceId));
-      } catch (error) {
-        console.error('Error deleting invoice:', error);
-        alert('Failed to delete invoice');
-      }
+    if (deletingId || !window.confirm('Are you sure you want to delete this invoice?')) return;
+    setDeletingId(invoiceId);
+    setError('');
+    try {
+      await invoiceService.deleteInvoice(invoiceId);
+      setInvoices(prev => prev.filter(inv => inv.id !== invoiceId));
+    } catch (error) {
+      setError(friendlyError('delete the invoice', error));
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -222,6 +226,7 @@ export default function Invoices() {
             invoices={sortedInvoices} 
             onStatusChange={(id, status) => setInvoices(prev => prev.map(invoice => invoice.id === id ? normalizeInvoice({ ...invoice, status }) : invoice))}
             onDelete={handleDeleteInvoice}
+            deletingId={deletingId}
           />
         </div>
       </main>

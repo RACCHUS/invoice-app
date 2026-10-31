@@ -151,6 +151,7 @@ export const invoiceService = {
 
   // Delete an invoice
   async deleteInvoice(invoiceId) {
+    if (!invoiceId) throw new Error('Missing invoice id to delete.');
     try {
       await deleteDoc(doc(db, COLLECTION_NAME, invoiceId));
     } catch (error) {

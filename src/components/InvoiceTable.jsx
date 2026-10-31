@@ -4,7 +4,7 @@ import { generateInvoicePDF } from '../utils/pdfGenerator';
 import { invoiceService } from '../services/InvoiceServices';
 import { formatDate } from '../utils/formatters';
 
-export default function InvoiceTable({ invoices, onDelete, onConvertToInvoice, onStatusChange, documentType = 'invoice' }) {
+export default function InvoiceTable({ invoices, onDelete, onConvertToInvoice, onStatusChange, deletingId = null, documentType = 'invoice' }) {
   const [busyId, setBusyId] = useState(null);
   const [error, setError] = useState('');
 
@@ -171,8 +171,9 @@ export default function InvoiceTable({ invoices, onDelete, onConvertToInvoice, o
                   </Link>
                   <button
                     onClick={() => onDelete(invoice.id)}
+                    disabled={deletingId === invoice.id}
                     className="action-btn delete"
-                    title="Delete"
+                    title={deletingId === invoice.id ? 'Deleting...' : 'Delete'}
                   >
                     <span className="sr-only">Delete</span>
                     <span className="delete-icon" aria-hidden="true">

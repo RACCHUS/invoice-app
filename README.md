@@ -74,11 +74,12 @@ npm run start:dev           # 🔥 Start BOTH client and emulators
 # Production
 npm run build              # Build for production
 npm run preview            # Preview production build
-npm run deploy             # Build and deploy to Firebase manually (pushes to main also deploy via GitHub Actions, using the VITE_FIREBASE_* repository secrets)
+npm run deploy             # Build and deploy hosting + Firestore rules manually (pushes to main deploy hosting via GitHub Actions, using the VITE_FIREBASE_* repository secrets)
 
 # Code Quality
 npm run lint               # Run ESLint
-npm test                   # Run totals, numbering, client details, date, PDF, and service persistence tests (Firestore mocked in memory)
+npm test                   # Run totals, numbering, client details, date, PDF (empty fields, size), delete, and service persistence tests (Firestore mocked in memory)
+npm run test:rules         # Check firestore.rules against the live Firebase Rules API (needs `firebase login`); optional path argument tests another rules file
 
 # Utilities
 npm run clean              # Clean build artifacts
@@ -158,6 +159,9 @@ src/
 - Totals are persisted on save and calculated from line items for older documents, including list sorting and dashboard totals. Quotes are excluded from invoice counts and amounts.
 - Unpaid invoices past their due date display as overdue automatically (overdue is no longer a stored choice, so moving a due date later clears it). Date-only fields retain their entered calendar day rather than shifting with UTC.
 - Number suggestions follow the most recently saved numeric prefix and the highest saved suffix with that prefix. Quotes have a separate suggestion sequence, and conversion assigns the next invoice suggestion. Suggestions are not reservations: concurrent users can choose the same number, deleted invoices do not reserve numbers, and manual duplicate numbers show a warning rather than being blocked.
+- Firestore security rules live in `firestore.rules`: each signed-in user can read, edit, and delete only their own invoices, quotes, clients, and items, and cannot reassign a document to another user. Deleting a client keeps its invoices; saving one of those invoices again recreates the client. Delete failures show a plain-language message on the page.
+- Blank optional fields (sender/recipient lines, job site, due date, notes) are left out of views and PDFs instead of printing empty labels or lines. Subtotal and tax lines appear only when there is tax.
+- PDFs are text-based with stream compression (about 11KB for an 8-page, 120-item invoice).
 
 - ✅ **PDF File Size Optimization**: Reduced from 2-10MB to 50-200KB
 - ✅ **Export Consistency**: Standardized PDF output from all export points
@@ -171,6 +175,8 @@ src/
 ```bash
 npm run deploy
 ```
+
+This deploys hosting and `firestore.rules`. GitHub Actions deploys hosting only, so after changing `firestore.rules` run `npm run test:rules` and then `npx firebase deploy --only firestore:rules`.
 
 ### Build for Other Platforms
 ```bash

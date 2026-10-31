@@ -8,7 +8,17 @@ const table = name => {
   return store.get(name);
 };
 
-export const resetStore = () => { store.clear(); nextId = 1; clock = 1; };
+const failures = new Map();
+// Makes the next call to the named operation (e.g. 'deleteDoc') reject with the given error.
+export const failNext = (operation, error) => failures.set(operation, error);
+const maybeFail = operation => {
+  const error = failures.get(operation);
+  if (!error) return;
+  failures.delete(operation);
+  throw error;
+};
+
+export const resetStore = () => { store.clear(); failures.clear(); nextId = 1; clock = 1; };
 export const getFirestore = () => ({});
 export const db = {};
 export const serverTimestamp = () => ({ seconds: clock++ });
@@ -41,7 +51,7 @@ export const addDoc = async (col, data) => {
   await setDoc(ref, data);
   return ref;
 };
-export const deleteDoc = async ref => { table(ref.collection).delete(ref.id); };
+export const deleteDoc = async ref => { maybeFail('deleteDoc'); table(ref.collection).delete(ref.id); };
 export const writeBatch = () => {
   const ops = [];
   return {

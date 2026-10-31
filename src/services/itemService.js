@@ -54,6 +54,7 @@ export const itemService = {
 
   // Delete an item
   async deleteItem(itemId) {
+    if (!itemId) throw new Error('Missing item id to delete.');
     try {
       await deleteDoc(doc(db, COLLECTION_NAME, itemId));
     } catch (error) {

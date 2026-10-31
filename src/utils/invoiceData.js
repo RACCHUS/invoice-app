@@ -1,5 +1,10 @@
 export const isQuote = invoice => invoice.type === 'quote' || invoice.status === 'quote';
 
+export const cleanText = value => (value === null || value === undefined ? '' : String(value).trim());
+
+// Trimmed, non-empty values only, so blank optional fields are never printed.
+export const presentLines = (...values) => values.map(cleanText).filter(Boolean);
+
 export const localDate = (date = new Date()) => {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');

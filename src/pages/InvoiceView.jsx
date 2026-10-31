@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { invoiceService } from '../services/InvoiceServices';
 import { generateInvoicePDF } from '../utils/pdfGenerator';
-import { locationGroupHeading, normalizeInvoice } from '../utils/invoiceData';
+import { cleanText, isQuote, locationGroupHeading, normalizeInvoice } from '../utils/invoiceData';
+import DetailBlock from '../components/DetailBlock';
 
 export default function InvoiceView() {
   const { id } = useParams();
@@ -95,27 +96,14 @@ export default function InvoiceView() {
           </div>
         </div>
         <div className="invoice-details-content">
-          <div className="invoice-details-section">
-            <strong>Date:</strong> {invoice.date}<br />
-            <strong>Due Date:</strong> {invoice.dueDate}
-          </div>
-          <div className="invoice-details-section">
-            <strong>Sender:</strong><br />
-            {invoice.sender?.businessName && <>{invoice.sender.businessName}<br /></>}
-            {invoice.sender?.name}<br />
-            {invoice.sender?.address}<br />
-            {invoice.sender?.phone}
-          </div>
-          <div className="invoice-details-section">
-            <strong>Recipient:</strong><br />
-            {invoice.recipient?.name}<br />
-            {invoice.recipient?.address}<br />
-            {invoice.recipient?.email}
-          </div>
-          {invoice.jobSite && <div className="invoice-details-section">
-            <strong>Job Site:</strong><br />
-            {invoice.jobSite}
+          {(cleanText(invoice.date) || cleanText(invoice.dueDate)) && <div className="invoice-details-section">
+            {cleanText(invoice.date) && <><strong>Date:</strong> {invoice.date}</>}
+            {cleanText(invoice.date) && cleanText(invoice.dueDate) && <br />}
+            {cleanText(invoice.dueDate) && <><strong>{isQuote(invoice) ? 'Valid Until' : 'Due Date'}:</strong> {invoice.dueDate}</>}
           </div>}
+          <DetailBlock title="Sender" values={[invoice.sender?.businessName, invoice.sender?.name, invoice.sender?.address, invoice.sender?.phone]} />
+          <DetailBlock title="Recipient" values={[invoice.recipient?.name, invoice.recipient?.address, invoice.recipient?.email]} />
+          <DetailBlock title="Job Site" values={[invoice.jobSite]} />
           <div className="invoice-details-section">
             <strong>Status:</strong> {invoice.status}
           </div>
@@ -150,16 +138,13 @@ export default function InvoiceView() {
             </table>
           </div>
           <div className="invoice-details-section" style={{ textAlign: 'right', marginTop: 16 }}>
-            <strong>Subtotal:</strong> ${(invoice.subtotal || 0).toFixed(2)}<br />
-            <strong>Tax:</strong> ${(invoice.totalTax || 0).toFixed(2)}<br />
+            {invoice.totalTax > 0 && <>
+              <strong>Subtotal:</strong> ${(invoice.subtotal || 0).toFixed(2)}<br />
+              <strong>Tax:</strong> ${invoice.totalTax.toFixed(2)}<br />
+            </>}
             <strong>Total:</strong> ${(invoice.total || 0).toFixed(2)}
           </div>
-          {invoice.notes && (
-            <div className="invoice-details-section">
-              <strong>Notes:</strong><br />
-              {invoice.notes}
-            </div>
-          )}
+          <DetailBlock title="Notes" values={[invoice.notes]} />
         </div>
       </div>
     </div>

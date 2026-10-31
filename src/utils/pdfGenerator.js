@@ -1,10 +1,10 @@
 import { jsPDF } from 'jspdf';
-import { locationGroupHeading, normalizeInvoice } from './invoiceData.js';
+import { cleanText, locationGroupHeading, normalizeInvoice, presentLines } from './invoiceData.js';
 
 export const generateInvoicePDF = (invoice) => {
   invoice = normalizeInvoice(invoice);
   if (!invoice.lineItems?.length) throw new Error('This document has no line items to export.');
-  const pdf = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
+  const pdf = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4', compress: true });
   const pageWidth = pdf.internal.pageSize.getWidth(); // 595pt
   const pageHeight = pdf.internal.pageSize.getHeight(); // 842pt
   const margin = 40;
@@ -28,74 +28,66 @@ export const generateInvoicePDF = (invoice) => {
   
   // Sender info (left side)
   const senderX = margin;
-  pdf.setFont('helvetica', 'bold');
-  pdf.text('From:', senderX, yPosition);
-  pdf.setFont('helvetica', 'normal');
-  yPosition += 15;
-  
-  if (invoice.sender?.businessName) {
-    pdf.text(invoice.sender.businessName, senderX, yPosition);
-    yPosition += 12;
-  }
-  if (invoice.sender?.name) {
-    pdf.text(invoice.sender.name, senderX, yPosition);
-    yPosition += 12;
-  }
-  if (invoice.sender?.address) {
-    const lines = pdf.splitTextToSize(invoice.sender.address, contentWidth / 2 - 30);
-    pdf.text(lines, senderX, yPosition);
-    yPosition += lines.length * 13;
-  }
-  if (invoice.sender?.phone) {
-    pdf.text(invoice.sender.phone, senderX, yPosition);
-    yPosition += 12;
-  }
-  
-  // Recipient info (right side)
   const recipientX = pageWidth / 2 + 40;
-  let recipientY = margin + 40;
-  
-  pdf.setFont('helvetica', 'bold');
-  pdf.text('To:', recipientX, recipientY);
-  pdf.setFont('helvetica', 'normal');
-  recipientY += 15;
-  
-  if (invoice.recipient?.name) {
-    pdf.text(invoice.recipient.name, recipientX, recipientY);
-    recipientY += 12;
-  }
-  if (invoice.recipient?.address) {
-    const lines = pdf.splitTextToSize(invoice.recipient.address, pageWidth - recipientX - margin);
-    pdf.text(lines, recipientX, recipientY);
-    recipientY += lines.length * 13;
-  }
-  if (invoice.recipient?.email) {
-    const lines = pdf.splitTextToSize(invoice.recipient.email, pageWidth - recipientX - margin);
-    pdf.text(lines, recipientX, recipientY);
-    recipientY += lines.length * 13;
-  }
-  if (invoice.jobSite) {
-    recipientY += 6;
+  const senderWidth = contentWidth / 2 - 30;
+  const recipientWidth = pageWidth - recipientX - margin;
+
+  const writeBlock = (heading, values, x, y, width) => {
+    const lines = presentLines(...values);
+    if (!lines.length) return y;
     pdf.setFont('helvetica', 'bold');
-    pdf.text('Job site:', recipientX, recipientY);
+    pdf.text(heading, x, y);
     pdf.setFont('helvetica', 'normal');
-    recipientY += 13;
-    const lines = pdf.splitTextToSize(invoice.jobSite, pageWidth - recipientX - margin);
-    pdf.text(lines, recipientX, recipientY);
-    recipientY += lines.length * 13;
+    y += 15;
+    lines.forEach(value => {
+      const wrapped = pdf.splitTextToSize(value, width);
+      pdf.text(wrapped, x, y);
+      y += wrapped.length * 13;
+    });
+    return y;
+  };
+
+  yPosition = writeBlock('From:', [
+    invoice.sender?.businessName,
+    invoice.sender?.name,
+    invoice.sender?.address,
+    invoice.sender?.phone,
+  ], senderX, yPosition, senderWidth);
+
+  // Recipient info (right side)
+  let recipientY = writeBlock('To:', [
+    invoice.recipient?.name,
+    invoice.recipient?.address,
+    invoice.recipient?.email,
+  ], recipientX, margin + 40, recipientWidth);
+
+  const jobSite = cleanText(invoice.jobSite);
+  if (jobSite) {
+    if (recipientY > margin + 40) recipientY += 6;
+    recipientY = writeBlock('Job site:', [jobSite], recipientX, recipientY, recipientWidth);
   }
-  
+
   // Dates
-  yPosition = Math.max(yPosition, recipientY) + 20;
-  pdf.setFont('helvetica', 'bold');
-  pdf.text(`Date: `, senderX, yPosition);
-  pdf.setFont('helvetica', 'normal');
-  pdf.text(invoice.date || '', senderX + 35, yPosition);
-  
-  pdf.setFont('helvetica', 'bold');
-  pdf.text(`Due: `, recipientX, yPosition);
-  pdf.setFont('helvetica', 'normal');
-  pdf.text(invoice.dueDate || '', recipientX + 30, yPosition);
+  const date = cleanText(invoice.date);
+  const dueDate = cleanText(invoice.dueDate);
+  if (date || dueDate) {
+    yPosition = Math.max(yPosition, recipientY) + 20;
+    if (date) {
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Date: ', senderX, yPosition);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(date, senderX + 35, yPosition);
+    }
+    if (dueDate) {
+      const dueLabel = label === 'Quote' ? 'Valid until: ' : 'Due: ';
+      pdf.setFont('helvetica', 'bold');
+      pdf.text(dueLabel, recipientX, yPosition);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(dueDate, recipientX + pdf.getTextWidth(dueLabel), yPosition);
+    }
+  } else {
+    yPosition = Math.max(yPosition, recipientY);
+  }
   
   yPosition += 30;
   
@@ -130,7 +122,7 @@ export const generateInvoicePDF = (invoice) => {
   
   invoice.lineItems.forEach((item, index) => {
     const rowHeight = 20;
-    const descriptionLines = pdf.splitTextToSize(item.description, columnWidths[0] - 16);
+    const descriptionLines = pdf.splitTextToSize(cleanText(item.description), columnWidths[0] - 16);
     const actualRowHeight = Math.max(rowHeight, descriptionLines.length * 12);
     const groupHeading = locationGroupHeading(invoice.lineItems, index);
     const headingHeight = groupHeading ? 20 : 0;
@@ -205,7 +197,8 @@ export const generateInvoicePDF = (invoice) => {
   
   // Check if we need a new page for totals and notes
   const totalsHeight = 80; // Estimated height for totals section
-  const notesHeight = invoice.notes ? 60 : 0; // Estimated height for notes
+  const notes = cleanText(invoice.notes);
+  const notesHeight = notes ? 60 : 0; // Estimated height for notes
   
   if (yPosition + totalsHeight + notesHeight > pageHeight - margin) {
     pdf.addPage();
@@ -221,10 +214,12 @@ export const generateInvoicePDF = (invoice) => {
   pdf.setFontSize(11);
   
   const totalsX = pageWidth - margin - 100;
-  pdf.text(`Subtotal: $${subtotal.toFixed(2)}`, totalsX, yPosition, { align: 'right' });
-  yPosition += 15;
-  pdf.text(`Tax: $${totalTax.toFixed(2)}`, totalsX, yPosition, { align: 'right' });
-  yPosition += 15;
+  if (totalTax > 0) {
+    pdf.text(`Subtotal: $${subtotal.toFixed(2)}`, totalsX, yPosition, { align: 'right' });
+    yPosition += 15;
+    pdf.text(`Tax: $${totalTax.toFixed(2)}`, totalsX, yPosition, { align: 'right' });
+    yPosition += 15;
+  }
   
   pdf.setFont('helvetica', 'bold');
   pdf.setFontSize(14);
@@ -232,8 +227,8 @@ export const generateInvoicePDF = (invoice) => {
   yPosition += 30;
   
   // Notes
-  if (invoice.notes) {
-    const notesLines = pdf.splitTextToSize(invoice.notes, contentWidth);
+  if (notes) {
+    const notesLines = pdf.splitTextToSize(notes, contentWidth);
     const notesHeight = 30 + (notesLines.length * 12); // Title + lines
     
     // Check if notes need a new page

@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "test": "node --test",
+    "test:rules": "node scripts/test-firestore-rules.mjs",
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",

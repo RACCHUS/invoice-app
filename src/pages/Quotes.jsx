@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { invoiceService } from '../services/InvoiceServices';
 import InvoiceTable from '../components/InvoiceTable';
 import { Link } from 'react-router-dom';
+import { friendlyError } from '../utils/errors';
 
 export default function Quotes() {
   const { currentUser } = useAuth();
@@ -14,6 +15,7 @@ export default function Quotes() {
   const [dateRange, setDateRange] = useState({ from: '', to: '' });
   const [sortBy, setSortBy] = useState('date');
   const [sortDir, setSortDir] = useState('desc');
+  const [deletingId, setDeletingId] = useState(null);
 
   useEffect(() => {
     if (!currentUser) return;
@@ -33,14 +35,16 @@ export default function Quotes() {
   }, [currentUser]);
 
   const handleDeleteQuote = async (quoteId) => {
-    if (window.confirm('Are you sure you want to delete this quote?')) {
-      try {
-        await invoiceService.deleteInvoice(quoteId);
-        setQuotes(quotes.filter(q => q.id !== quoteId));
-      } catch (error) {
-        console.error('Error deleting quote:', error);
-        alert('Failed to delete quote');
-      }
+    if (deletingId || !window.confirm('Are you sure you want to delete this quote?')) return;
+    setDeletingId(quoteId);
+    setError('');
+    try {
+      await invoiceService.deleteInvoice(quoteId);
+      setQuotes(prev => prev.filter(q => q.id !== quoteId));
+    } catch (error) {
+      setError(friendlyError('delete the quote', error));
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -185,7 +189,8 @@ export default function Quotes() {
           <InvoiceTable 
             documentType="quote"
             invoices={sortedQuotes} 
-            onDelete={handleDeleteQuote} 
+            onDelete={handleDeleteQuote}
+            deletingId={deletingId} 
             onConvertToInvoice={handleConvertToInvoice}
           />
         </div>

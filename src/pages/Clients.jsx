@@ -3,6 +3,7 @@ import { clientService } from '../services/clientService';
 import { useAuth } from '../contexts/AuthContext';
 import ClientForm from '../components/clientForm';
 import { getClientDetails } from '../utils/clientDetails';
+import { friendlyError } from '../utils/errors';
 
 export default function Clients() {
   const { currentUser } = useAuth();
@@ -10,6 +11,7 @@ export default function Clients() {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(null);
   const [error, setError] = useState('');
+  const [deletingId, setDeletingId] = useState(null);
 
   useEffect(() => {
     clientService.getClients(currentUser.uid).then(setClients).catch(error => {
@@ -19,13 +21,16 @@ export default function Clients() {
   }, [currentUser.uid]);
 
   async function handleDelete(id) {
-    if (!window.confirm('Delete this saved client? Existing invoices will not change.')) return;
+    if (deletingId || !window.confirm('Delete this saved client? Existing invoices will not change.')) return;
+    setDeletingId(id);
+    setError('');
     try {
       await clientService.deleteClient(id);
       setClients(prev => prev.filter(client => client.id !== id));
     } catch (error) {
-      console.error('Error deleting client:', error);
-      setError(`Failed to delete client: ${error.message}`);
+      setError(friendlyError('delete the client', error));
+    } finally {
+      setDeletingId(null);
     }
   }
 
@@ -56,7 +61,7 @@ export default function Clients() {
                 <td data-label="Addresses" className="wrap-cell"><div>{getClientDetails(client, 'addresses').map(detail => <p key={detail.value}>{detail.label}: {detail.value}</p>)}</div></td>
                 <td data-label="Actions"><div className="table-actions">
                   <button className="action-btn edit" onClick={() => setEditing(client)}>Edit</button>
-                  <button className="action-btn delete" onClick={() => handleDelete(client.id)}>Delete</button>
+                  <button className="action-btn delete" disabled={deletingId === client.id} onClick={() => handleDelete(client.id)}>{deletingId === client.id ? 'Deleting...' : 'Delete'}</button>
                 </div></td>
               </tr>
             ))}</tbody>

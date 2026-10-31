@@ -4,6 +4,7 @@ import { calculateTotals, normalizeInvoice, suggestNextNumber, localDate } from 
 import { getClientDetails, mergeClientDetails } from '../src/utils/clientDetails.js';
 import { generateInvoicePDF } from '../src/utils/pdfGenerator.js';
 import { formatDate } from '../src/utils/formatters.js';
+import { pdfText } from './helpers/pdfText.js';
 
 test('totals include tax, fractional quantities, zero prices, and credits', () => {
   const totals = calculateTotals([
@@ -100,7 +101,7 @@ test('PDF export accepts legacy numeric strings and includes correct totals', ()
     lineItems: [{ description: 'Work', quantity: '1.5', unitPrice: '100', tax: '10' }]
   });
 
-  const output = pdf.output();
+  const output = pdfText(pdf);
   assert.ok(output.includes('Total: $165.00'));
   assert.ok(output.includes('Building A'));
   assert.ok(output.includes('123 Main Street'));
@@ -155,7 +156,7 @@ test('PDF shows the job site and one heading per building/unit group', () => {
       { description: 'Trim', quantity: 1, unitPrice: 10, building: 'B' }
     ]
   });
-  const output = pdf.output();
+  const output = pdfText(pdf);
   assert.ok(output.includes('500 Site Rd'));
   assert.equal(output.split('Unit 101').length - 1, 1);
   assert.ok(output.includes('Building B'));

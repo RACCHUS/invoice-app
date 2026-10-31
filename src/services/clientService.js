@@ -63,6 +63,7 @@ export const clientService = {
 
   // Delete a client
   async deleteClient(clientId) {
+    if (!clientId) throw new Error('Missing client id to delete.');
     try {
       await deleteDoc(doc(db, COLLECTION_NAME, clientId));
     } catch (error) {
