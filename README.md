@@ -74,7 +74,7 @@ npm run start:dev           # 🔥 Start BOTH client and emulators
 # Production
 npm run build              # Build for production
 npm run preview            # Preview production build
-npm run deploy             # Build and deploy to Firebase
+npm run deploy             # Build and deploy to Firebase manually (pushes to main also deploy via GitHub Actions, using the VITE_FIREBASE_* repository secrets)
 
 # Code Quality
 npm run lint               # Run ESLint
