@@ -53,6 +53,8 @@ body {
 }
 
 .form-input {
+  color: #1a202c;
+  caret-color: #1a202c;
   width: 100%;
   padding: 0.5em 1em;
   border: 1px solid #d1d5db;
@@ -246,6 +248,10 @@ body {
   color: #6b7280;
   font-size: 0.95em;
 }
+.client-details {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
 .status-badge {
   display: inline-block;
   padding: 0.3em 1em;
@@ -272,6 +278,7 @@ body {
 }
 .table-actions {
   display: flex;
+  flex-wrap: wrap;
   justify-content: flex-end;
   gap: 0.5em;
 }
@@ -338,7 +345,8 @@ body {
 /* Layout and navigation for Layout.jsx */
 .nav-desktop {
   display: flex;
-  gap: 2em;
+  flex-wrap: wrap;
+  gap: 0.25em;
 }
 .nav-link {
   display: flex;
@@ -369,6 +377,7 @@ body {
   display: flex;
   align-items: center;
   gap: 1.5em;
+  flex-wrap: wrap;
 }
 .user-info {
   display: flex;
@@ -412,7 +421,7 @@ body {
 .nav-mobile-inner {
   padding: 1em 0.5em;
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
   gap: 0.5em;
 }
 @media (max-width: 900px) {
@@ -439,6 +448,9 @@ body {
   }
   .invoice-details-content {
     font-size: 1em;
+  }
+  .invoice-details-section {
+    white-space: pre-line;
   }
   .invoice-table, .invoice-table th, .invoice-table td {
     font-size: 0.95em;
@@ -518,10 +530,23 @@ body {
   .table-actions {
     justify-content: flex-start;
     gap: 0.3em;
+    width: 100%;
   }
   .invoice-table td[data-label="Actions"] {
     justify-content: flex-start;
     padding-left: 0;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5em;
+  }
+  .invoice-table td[data-label="Actions"]:before {
+    flex: none;
+  }
+  .invoice-table td:before {
+    flex: 0 0 90px;
+  }
+  .invoice-table td > div {
+    min-width: 0;
   }
 }
 
@@ -553,8 +578,11 @@ body {
   border-radius: 12px;
   box-shadow: 0 4px 24px rgba(0,0,0,0.12);
   padding: 2em 2em 1.5em 2em;
-  min-width: 320px;
+  width: 640px;
+  min-width: 0;
   max-width: 90vw;
+  max-height: 85vh;
+  overflow-y: auto;
 }
 
 /* Invoice Details styles */
@@ -601,9 +629,44 @@ body {
   font-weight: 600;
 }
 .line-items-table .form-input {
-  min-width: 80px;
+  min-width: 0;
   font-size: 1em;
   padding: 0.4em 0.6em;
+}
+.line-items-table td[data-label="Description"] {
+  width: 45%;
+}
+.line-items-table textarea {
+  resize: vertical;
+  white-space: pre-wrap;
+}
+.line-items-table td[data-label="Quantity"],
+.line-items-table td[data-label="Unit Price"],
+.line-items-table td[data-label="Tax (%)"] {
+  min-width: 100px;
+}
+.document-fields {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+.form-help {
+  color: #4b5563;
+  font-size: 0.9em;
+}
+.saved-detail {
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 1em;
+  margin-bottom: 1em;
+}
+button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+.form-grid > div {
+  min-width: 0;
 }
 .drag-handle {
   cursor: grab;
@@ -634,10 +697,13 @@ body {
     border: none;
     border-bottom: 1px solid #e5e7eb;
     padding: 0.5em 0;
+    min-width: 0;
+    width: 100%;
+    flex-wrap: wrap;
   }
   .line-items-table td:before {
     content: attr(data-label);
-    flex: 0 0 110px;
+    flex: 0 0 100%;
     font-weight: 600;
     color: #555;
     margin-right: 0.5em;
@@ -646,6 +712,16 @@ body {
   .drag-handle {
     order: -1;
     margin-right: 0.5em;
+  }
+  .line-items-table td[data-label="Description"],
+  .line-items-table td[data-label="Quantity"],
+  .line-items-table td[data-label="Unit Price"],
+  .line-items-table td[data-label="Tax (%)"] {
+    width: 100%;
+    min-width: 0;
+  }
+  .line-items-table .form-input {
+    font-size: 16px;
   }
 }
 .wrap-cell {
@@ -682,4 +758,29 @@ body {
     display: inline-block;
     vertical-align: middle;
   }
+}
+.line-item-location {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5em;
+  margin-bottom: 0.5em;
+}
+.line-item-location-field {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 120px;
+  min-width: 0;
+  font-size: 0.8em;
+  color: #4a5568;
+}
+.line-item-location .form-input {
+  width: 100%;
+  min-width: 0;
+}
+.invoice-table tr.location-row td {
+  background: #e5e7eb;
+  color: #1a202c;
+}
+.invoice-table tr.location-row td:before {
+  content: none;
 }

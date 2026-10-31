@@ -9,7 +9,10 @@ A modern, responsive invoice management application built with React and Firebas
 - **Authentication**: Secure login and registration
 - **Invoice Management**: Create, edit, delete, and view invoices
 - **Quote Management**: Create quotes and convert them to invoices
-- **Client Management**: Add and manage clients
+- **Client Management**: Add and manage clients with multiple labeled building/mailing addresses and email contacts
+- **Saved Items**: Add/edit reusable descriptions, prices, and tax rates from the Items navigation link
+- **Invoice Number Suggestions**: Suggest the next saved number while preserving prefixes and zero padding; manual entry remains available
+- **Payment Tracking**: Mark invoices paid or unpaid from the list or detail view, or edit their payment status
 - **PDF Export**: High-quality PDF generation with optimized file sizes
 - **Modern UI**: Clean, professional interface with Tailwind CSS
 - **Responsive**: Works great on desktop and mobile
@@ -75,6 +78,7 @@ npm run deploy             # Build and deploy to Firebase
 
 # Code Quality
 npm run lint               # Run ESLint
+npm test                   # Run totals, numbering, client details, date, PDF, and service persistence tests (Firestore mocked in memory)
 
 # Utilities
 npm run clean              # Clean build artifacts
@@ -145,6 +149,15 @@ src/
 ```
 
 ## Recent Improvements
+
+- Invoice and quote descriptions wrap in multiline fields, including on mobile. Numeric fields retain zero and partially typed decimal values.
+- Clients and Items are available in navigation and have Add buttons. Select a saved client, then choose the building address and email for that document; both remain editable.
+- Construction locations are all optional: an invoice can have a job site address, and each line item can have a building and/or unit. New line items start with the building and unit of the item above, so several items for the same unit (or building) don't need re-entering, and one invoice can still span multiple buildings. Views and PDFs show a heading whenever the building/unit changes (items with no building/unit that follow located items appear under "General"). Buildings and units used before for the same client and job site are suggested; job sites are added to the client's saved addresses.
+- Save-client and save-item checkboxes are enabled by default on invoice/quote creation and editing. New addresses/emails append to the chosen saved client without replacing its defaults. Uncheck these boxes for one-off details. The document and reusable details save together or not at all.
+- New documents reuse the latest saved sender information. Quotes no longer reset entered text on parent re-render.
+- Totals are persisted on save and calculated from line items for older documents, including list sorting and dashboard totals. Quotes are excluded from invoice counts and amounts.
+- Unpaid invoices past their due date display as overdue automatically (overdue is no longer a stored choice, so moving a due date later clears it). Date-only fields retain their entered calendar day rather than shifting with UTC.
+- Number suggestions follow the most recently saved numeric prefix and the highest saved suffix with that prefix. Quotes have a separate suggestion sequence, and conversion assigns the next invoice suggestion. Suggestions are not reservations: concurrent users can choose the same number, deleted invoices do not reserve numbers, and manual duplicate numbers show a warning rather than being blocked.
 
 - ✅ **PDF File Size Optimization**: Reduced from 2-10MB to 50-200KB
 - ✅ **Export Consistency**: Standardized PDF output from all export points

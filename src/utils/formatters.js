@@ -10,7 +10,9 @@ export const formatCurrency = (amount, currency = 'USD', locale = 'en-US') => {
 export const formatDate = (date, options = {}) => {
   if (!date) return 'N/A';
   
-  const dateObj = date.seconds ? new Date(date.seconds * 1000) : new Date(date);
+  const dateObj = typeof date.seconds === 'number' ? new Date(date.seconds * 1000)
+    : typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)
+      ? new Date(`${date}T00:00:00`) : new Date(date);
   
   const defaultOptions = {
     year: 'numeric',

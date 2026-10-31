@@ -19,7 +19,9 @@ export default function Layout({ children }) {
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: 'dashboard' },
     { name: 'Invoices', href: '/invoices', icon: 'invoices' },
+    { name: 'Quotes', href: '/quotes', icon: 'invoices' },
     { name: 'Clients', href: '/clients', icon: 'clients' },
+    { name: 'Items', href: '/items', icon: 'invoices' },
   ];
 
   const isActivePath = (path) => {

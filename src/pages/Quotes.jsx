@@ -8,6 +8,7 @@ export default function Quotes() {
   const { currentUser } = useAuth();
   const [quotes, setQuotes] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [search, setSearch] = useState('');
   const [clientFilter, setClientFilter] = useState('');
   const [dateRange, setDateRange] = useState({ from: '', to: '' });
@@ -22,7 +23,8 @@ export default function Quotes() {
         const all = await invoiceService.getInvoices(currentUser.uid);
         setQuotes(all.filter(q => q.type === 'quote' || q.status === 'quote'));
       } catch (e) {
-        setQuotes([]);
+        console.error('Error loading quotes:', e);
+        setError(`Failed to load quotes: ${e.message}`);
       } finally {
         setLoading(false);
       }
@@ -42,23 +44,7 @@ export default function Quotes() {
     }
   };
 
-  useEffect(() => {
-    if (!currentUser) return;
-    const fetchQuotes = async () => {
-      setLoading(true);
-      try {
-        const all = await invoiceService.getInvoices(currentUser.uid);
-        setQuotes(all.filter(q => q.type === 'quote' || q.status === 'quote'));
-      } catch (e) {
-        setQuotes([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchQuotes();
-  }, [currentUser]);
-
-  const handleConvertToInvoice = (quoteId, convertedData) => {
+  const handleConvertToInvoice = (quoteId) => {
     // Remove the converted quote from the quotes list
     setQuotes(quotes.filter(q => q.id !== quoteId));
   };
@@ -74,7 +60,7 @@ export default function Quotes() {
     if (search) {
       const s = search.toLowerCase();
       if (!(
-        (quote.invoiceNumber && quote.invoiceNumber.toLowerCase().includes(s)) ||
+        (quote.invoiceNumber && String(quote.invoiceNumber).toLowerCase().includes(s)) ||
         (quote.recipient?.name && quote.recipient.name.toLowerCase().includes(s)) ||
         (quote.clientName && quote.clientName.toLowerCase().includes(s)) ||
         (quote.recipient?.email && quote.recipient.email.toLowerCase().includes(s)) ||
@@ -134,6 +120,7 @@ export default function Quotes() {
       </header>
       {/* Main Content */}
       <main className="app-main">
+        {error && <p role="alert">{error}</p>}
         {/* Search and Filters */}
         <div className="filter-card">
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1em', alignItems: 'center', marginBottom: 16 }}>
@@ -196,6 +183,7 @@ export default function Quotes() {
         {/* Quotes Table */}
         <div className="table-card">
           <InvoiceTable 
+            documentType="quote"
             invoices={sortedQuotes} 
             onDelete={handleDeleteQuote} 
             onConvertToInvoice={handleConvertToInvoice}

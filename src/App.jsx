@@ -13,11 +13,12 @@ import Quotes from './pages/Quotes';
 import QuoteCreate from './pages/QuoteCreate';
 import QuoteView from './pages/QuoteView';
 import QuoteEdit from './pages/QuoteEdit';
+import Layout from './layouts/Layout';
 import './styles/global.css';
 
 function ProtectedRoute({ children }) {
   const { currentUser } = useAuth();
-  return currentUser ? children : <Navigate to="/login" />;
+  return currentUser ? <Layout>{children}</Layout> : <Navigate to="/login" />;
 }
 
 function App() {

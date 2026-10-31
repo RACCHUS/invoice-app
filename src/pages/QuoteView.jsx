@@ -1,13 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import { invoiceService } from '../services/InvoiceServices';
 import { generateInvoicePDF } from '../utils/pdfGenerator';
+import { locationGroupHeading } from '../utils/invoiceData';
 
 export default function QuoteView() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [quote, setQuote] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     const fetchQuote = async () => {
@@ -24,7 +27,8 @@ export default function QuoteView() {
         }
         setQuote(quoteData);
       } catch (e) {
-        navigate('/quotes');
+        console.error('Error loading quote:', e);
+        setError(`Failed to load quote: ${e.message}`);
       } finally {
         setLoading(false);
       }
@@ -43,37 +47,33 @@ export default function QuoteView() {
   };
 
   const handleConvertToInvoice = async () => {
+    if (saving) return;
     if (!confirm('Convert this quote to an invoice? This action cannot be undone.')) return;
-    
+    setSaving(true);
     try {
-      const updatedData = {
-        ...quote,
-        type: 'invoice',
-        status: 'pending',
-        // Generate new invoice number if needed
-        invoiceNumber: quote.invoiceNumber || `INV-${Date.now().toString().slice(-6)}`
-      };
-      delete updatedData.id; // Remove id from update data
-      
-      await invoiceService.updateInvoice(id, updatedData);
+      await invoiceService.convertToInvoice(quote);
       alert('Quote successfully converted to invoice!');
       navigate('/invoices');
     } catch (error) {
       console.error('Error converting quote:', error);
       alert('Failed to convert quote to invoice.');
+    } finally {
+      setSaving(false);
     }
   };
 
   if (loading) return <div className="centered-screen"><div className="spinner"></div></div>;
-  if (!quote) return null;
+  if (!quote) return <p role="alert">{error || 'Quote not found.'}</p>;
 
   return (
     <div className="container">
+      <Link to="/quotes">Back to quotes</Link>
       <div className="invoice-details-card">
         <div className="invoice-details-header">
           <h2 className="page-title">Quote #{quote.invoiceNumber}</h2>
-          <div style={{ display: 'flex', gap: '1rem' }}>
-            <button className="btn-secondary" onClick={handleConvertToInvoice}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>
+            <Link className="btn-secondary" to={`/quotes/${id}/edit`}>Edit</Link>
+            <button className="btn-secondary" disabled={saving} onClick={handleConvertToInvoice}>
               Convert to Invoice
             </button>
             <button className="btn-primary" onClick={handleExportPDF}>Export to PDF</button>
@@ -97,6 +97,10 @@ export default function QuoteView() {
             {quote.recipient?.address}<br />
             {quote.recipient?.email}
           </div>
+          {quote.jobSite && <div className="invoice-details-section">
+            <strong>Job Site:</strong><br />
+            {quote.jobSite}
+          </div>}
           <div className="invoice-details-section">
             <strong>Status:</strong> Quote
           </div>
@@ -114,13 +118,18 @@ export default function QuoteView() {
               </thead>
               <tbody>
                 {quote.lineItems?.map((item, idx) => (
-                  <tr key={idx}>
-                    <td className="wrap-cell">{item.description}</td>
-                    <td>{item.quantity}</td>
-                    <td>${item.unitPrice}</td>
-                    <td>{item.tax || 0}</td>
-                    <td>${(item.quantity * item.unitPrice * (1 + (item.tax || 0) / 100)).toFixed(2)}</td>
+                  <React.Fragment key={idx}>
+                  {locationGroupHeading(quote.lineItems, idx) && <tr className="location-row">
+                    <td colSpan={5}><strong>{locationGroupHeading(quote.lineItems, idx)}</strong></td>
+                  </tr>}
+                  <tr>
+                    <td data-label="Description" className="wrap-cell">{item.description}</td>
+                    <td data-label="Qty">{item.quantity}</td>
+                    <td data-label="Unit Price">${item.unitPrice.toFixed(2)}</td>
+                    <td data-label="Tax (%)">{item.tax || 0}</td>
+                    <td data-label="Total">${(item.quantity * item.unitPrice * (1 + (item.tax || 0) / 100)).toFixed(2)}</td>
                   </tr>
+                  </React.Fragment>
                 ))}
               </tbody>
             </table>

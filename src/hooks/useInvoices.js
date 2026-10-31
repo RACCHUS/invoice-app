@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { invoiceService } from '../services/InvoiceServices';
+import { isQuote } from '../utils/invoiceData';
 
 export function useInvoices() {
   const [invoices, setInvoices] = useState([]);
@@ -19,7 +20,7 @@ export function useInvoices() {
       setLoading(true);
       setError(null);
       const fetchedInvoices = await invoiceService.getInvoices(currentUser.uid);
-      setInvoices(fetchedInvoices);
+      setInvoices(fetchedInvoices.filter(invoice => !isQuote(invoice)));
     } catch (err) {
       setError(err.message);
       console.error('Error fetching invoices:', err);

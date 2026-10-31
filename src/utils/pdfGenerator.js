@@ -1,6 +1,9 @@
-import jsPDF from 'jspdf';
+import { jsPDF } from 'jspdf';
+import { locationGroupHeading, normalizeInvoice } from './invoiceData.js';
 
 export const generateInvoicePDF = (invoice) => {
+  invoice = normalizeInvoice(invoice);
+  if (!invoice.lineItems?.length) throw new Error('This document has no line items to export.');
   const pdf = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
   const pageWidth = pdf.internal.pageSize.getWidth(); // 595pt
   const pageHeight = pdf.internal.pageSize.getHeight(); // 842pt
@@ -39,8 +42,9 @@ export const generateInvoicePDF = (invoice) => {
     yPosition += 12;
   }
   if (invoice.sender?.address) {
-    pdf.text(invoice.sender.address, senderX, yPosition);
-    yPosition += 12;
+    const lines = pdf.splitTextToSize(invoice.sender.address, contentWidth / 2 - 30);
+    pdf.text(lines, senderX, yPosition);
+    yPosition += lines.length * 13;
   }
   if (invoice.sender?.phone) {
     pdf.text(invoice.sender.phone, senderX, yPosition);
@@ -49,7 +53,7 @@ export const generateInvoicePDF = (invoice) => {
   
   // Recipient info (right side)
   const recipientX = pageWidth / 2 + 40;
-  let recipientY = margin + 25;
+  let recipientY = margin + 40;
   
   pdf.setFont('helvetica', 'bold');
   pdf.text('To:', recipientX, recipientY);
@@ -61,30 +65,41 @@ export const generateInvoicePDF = (invoice) => {
     recipientY += 12;
   }
   if (invoice.recipient?.address) {
-    pdf.text(invoice.recipient.address, recipientX, recipientY);
-    recipientY += 12;
+    const lines = pdf.splitTextToSize(invoice.recipient.address, pageWidth - recipientX - margin);
+    pdf.text(lines, recipientX, recipientY);
+    recipientY += lines.length * 13;
   }
   if (invoice.recipient?.email) {
-    pdf.text(invoice.recipient.email, recipientX, recipientY);
-    recipientY += 12;
+    const lines = pdf.splitTextToSize(invoice.recipient.email, pageWidth - recipientX - margin);
+    pdf.text(lines, recipientX, recipientY);
+    recipientY += lines.length * 13;
+  }
+  if (invoice.jobSite) {
+    recipientY += 6;
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('Job site:', recipientX, recipientY);
+    pdf.setFont('helvetica', 'normal');
+    recipientY += 13;
+    const lines = pdf.splitTextToSize(invoice.jobSite, pageWidth - recipientX - margin);
+    pdf.text(lines, recipientX, recipientY);
+    recipientY += lines.length * 13;
   }
   
   // Dates
-  yPosition += 20;
+  yPosition = Math.max(yPosition, recipientY) + 20;
   pdf.setFont('helvetica', 'bold');
   pdf.text(`Date: `, senderX, yPosition);
   pdf.setFont('helvetica', 'normal');
-  pdf.text(invoice.date, senderX + 35, yPosition);
+  pdf.text(invoice.date || '', senderX + 35, yPosition);
   
   pdf.setFont('helvetica', 'bold');
   pdf.text(`Due: `, recipientX, yPosition);
   pdf.setFont('helvetica', 'normal');
-  pdf.text(invoice.dueDate, recipientX + 30, yPosition);
+  pdf.text(invoice.dueDate || '', recipientX + 30, yPosition);
   
   yPosition += 30;
   
   // Line Items Table
-  const tableStartY = yPosition;
   const tableHeaders = ['Description', 'Qty', 'Unit Price'];
   const showTax = invoice.lineItems.some(item => item.tax && Number(item.tax) !== 0);
   if (showTax) tableHeaders.push('Tax (%)');
@@ -117,9 +132,11 @@ export const generateInvoicePDF = (invoice) => {
     const rowHeight = 20;
     const descriptionLines = pdf.splitTextToSize(item.description, columnWidths[0] - 16);
     const actualRowHeight = Math.max(rowHeight, descriptionLines.length * 12);
+    const groupHeading = locationGroupHeading(invoice.lineItems, index);
+    const headingHeight = groupHeading ? 20 : 0;
     
     // Check if we need a new page
-    if (yPosition + actualRowHeight > pageHeight - margin - 80) { // Leave space for totals
+    if (yPosition + headingHeight + actualRowHeight > pageHeight - margin - 80) { // Leave space for totals
       pdf.addPage();
       yPosition = margin;
       
@@ -141,6 +158,15 @@ export const generateInvoicePDF = (invoice) => {
       pdf.setFontSize(9);
     }
     
+    if (groupHeading) {
+      pdf.setFillColor(229, 231, 235); // #e5e7eb
+      pdf.rect(margin, yPosition, contentWidth, headingHeight, 'F');
+      pdf.setFont('helvetica', 'bold');
+      pdf.text(groupHeading, margin + 8, yPosition + 13);
+      pdf.setFont('helvetica', 'normal');
+      yPosition += headingHeight;
+    }
+
     // Alternate row colors
     if (index % 2 === 1) {
       pdf.setFillColor(249, 250, 251); // #f9fafb

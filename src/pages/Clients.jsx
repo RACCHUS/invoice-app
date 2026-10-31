@@ -1,83 +1,73 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { clientService } from '../services/clientService';
 import { useAuth } from '../contexts/AuthContext';
-
-function EditClientModal({ client, onSave, onClose }) {
-  const [form, setForm] = useState({ ...client });
-  const handleChange = e => setForm(f => ({ ...f, [e.target.name]: e.target.value }));
-  return (
-    <div className="modal-backdrop">
-      <div className="modal">
-        <h3>Edit Client</h3>
-        <input className="form-input" name="name" value={form.name} onChange={handleChange} placeholder="Name" />
-        <input className="form-input" name="email" value={form.email} onChange={handleChange} placeholder="Email" />
-        <input className="form-input" name="address" value={form.address} onChange={handleChange} placeholder="Address" />
-        <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
-          <button className="btn-primary" onClick={() => onSave(form)}>Save</button>
-          <button className="btn-secondary" onClick={onClose}>Cancel</button>
-        </div>
-      </div>
-    </div>
-  );
-}
+import ClientForm from '../components/clientForm';
+import { getClientDetails } from '../utils/clientDetails';
 
 export default function Clients() {
   const { currentUser } = useAuth();
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(null);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    if (!currentUser) return;
-    clientService.getClients(currentUser.uid).then(setClients).finally(() => setLoading(false));
-  }, [currentUser]);
+    clientService.getClients(currentUser.uid).then(setClients).catch(error => {
+      console.error('Error loading clients:', error);
+      setError(`Failed to load clients: ${error.message}`);
+    }).finally(() => setLoading(false));
+  }, [currentUser.uid]);
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Delete this client?')) return;
-    await clientService.deleteClient(id);
-    setClients(clients.filter(c => c.id !== id));
-  };
+  async function handleDelete(id) {
+    if (!window.confirm('Delete this saved client? Existing invoices will not change.')) return;
+    try {
+      await clientService.deleteClient(id);
+      setClients(prev => prev.filter(client => client.id !== id));
+    } catch (error) {
+      console.error('Error deleting client:', error);
+      setError(`Failed to delete client: ${error.message}`);
+    }
+  }
 
-  const handleEdit = (client) => setEditing(client);
-  const handleSaveEdit = async (updated) => {
-    await clientService.updateClient(updated.id, updated);
-    setClients(clients.map(c => c.id === updated.id ? { ...c, ...updated } : c));
+  async function handleSave(data) {
+    if (editing.id) {
+      await clientService.updateClient(editing.id, data);
+      setClients(prev => prev.map(client => client.id === editing.id ? { ...client, ...data } : client));
+    } else {
+      const id = await clientService.createClient({ ...data, userId: currentUser.uid });
+      setClients(prev => [...prev, { ...data, id }]);
+    }
     setEditing(null);
-  };
-
-  if (loading) return <div>Loading...</div>;
+  }
 
   return (
     <div className="container">
       <h2 className="page-title">Saved Clients</h2>
-      <table className="invoice-table">
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Address</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {clients.map(client => (
-            <tr key={client.id}>
-              <td>{client.name}</td>
-              <td>{client.email}</td>
-              <td>{client.address}</td>
-              <td>
-                <button className="action-btn edit" onClick={() => handleEdit(client)}>Edit</button>
-                <button className="action-btn delete" onClick={() => handleDelete(client.id)}>Delete</button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      {editing && (
-        <EditClientModal client={editing} onSave={handleSaveEdit} onClose={() => setEditing(null)} />
+      <button className="btn-primary" onClick={() => setEditing({})}>Add Client</button>
+      {error && <p role="alert">{error}</p>}
+      {loading ? <p>Loading...</p> : !clients.length ? <p>No saved clients. Add a client or save one from an invoice.</p> : (
+        <div className="table-responsive">
+          <table className="invoice-table">
+            <thead><tr><th>Name</th><th>Emails</th><th>Addresses</th><th>Actions</th></tr></thead>
+            <tbody>{clients.map(client => (
+              <tr key={client.id}>
+                <td data-label="Name">{client.name}</td>
+                <td data-label="Emails"><div>{getClientDetails(client, 'emails').map(detail => <p key={detail.value}>{detail.label}: {detail.value}</p>)}</div></td>
+                <td data-label="Addresses" className="wrap-cell"><div>{getClientDetails(client, 'addresses').map(detail => <p key={detail.value}>{detail.label}: {detail.value}</p>)}</div></td>
+                <td data-label="Actions"><div className="table-actions">
+                  <button className="action-btn edit" onClick={() => setEditing(client)}>Edit</button>
+                  <button className="action-btn delete" onClick={() => handleDelete(client.id)}>Delete</button>
+                </div></td>
+              </tr>
+            ))}</tbody>
+          </table>
+        </div>
       )}
+      {editing && <div className="modal-backdrop">
+        <div className="modal" role="dialog" aria-modal="true" aria-label={editing.id ? 'Edit Client' : 'Add Client'}>
+          <ClientForm key={editing.id || 'new'} initialData={editing.id ? editing : null} onSubmit={handleSave} onCancel={() => setEditing(null)} />
+        </div>
+      </div>}
     </div>
   );
 }
-
-/* Add minimal modal styles to global.css if not present */

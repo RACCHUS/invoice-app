@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { invoiceService } from '../services/InvoiceServices';
+import { isQuote } from '../utils/invoiceData';
+import { formatDate } from '../utils/formatters';
 
 export default function Dashboard() {
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [stats, setStats] = useState({
     totalInvoices: 0,
     paidInvoices: 0,
@@ -13,8 +16,7 @@ export default function Dashboard() {
     totalAmount: 0
   });
 
-  const { currentUser, logout } = useAuth();
-  const navigate = useNavigate();
+  const { currentUser } = useAuth();
 
   useEffect(() => {
     fetchInvoices();
@@ -23,7 +25,7 @@ export default function Dashboard() {
   const fetchInvoices = async () => {
     try {
       setLoading(true);
-      const fetchedInvoices = await invoiceService.getInvoices(currentUser.uid);
+      const fetchedInvoices = (await invoiceService.getInvoices(currentUser.uid)).filter(invoice => !isQuote(invoice));
       setInvoices(fetchedInvoices);
       
       // Calculate stats
@@ -40,17 +42,9 @@ export default function Dashboard() {
       });
     } catch (error) {
       console.error('Error fetching invoices:', error);
+      setError(`Failed to load invoices: ${error.message}`);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleLogout = async () => {
-    try {
-      await logout();
-      navigate('/login');
-    } catch (error) {
-      console.error('Failed to log out:', error);
     }
   };
 
@@ -59,10 +53,6 @@ export default function Dashboard() {
       style: 'currency',
       currency: 'USD'
     }).format(amount);
-  };
-
-  const formatDate = (date) => {
-    return new Date(date.seconds * 1000).toLocaleDateString();
   };
 
   if (loading) {
@@ -78,33 +68,8 @@ export default function Dashboard() {
 
   return (
     <div className="container">
-      {/* Header */}
-      <header style={{ background: '#fff', borderBottom: '1px solid #e5e7eb', boxShadow: '0 2px 8px rgba(0,0,0,0.03)', marginBottom: 32 }}>
-        <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 1em' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.5em 0' }}>
-            <div style={{ display: 'flex', alignItems: 'center' }}>
-              <h1 style={{ fontSize: 28, fontWeight: 700, color: '#1a202c' }}>Invoice App</h1>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                {currentUser.photoURL && (
-                  <img 
-                    src={currentUser.photoURL} 
-                    alt="Profile" 
-                    style={{ height: 32, width: 32, borderRadius: '50%' }}
-                  />
-                )}
-                <span style={{ color: '#374151' }}>
-                  Welcome, <span style={{ fontWeight: 600 }}>
-                    {currentUser.displayName || currentUser.email}
-                  </span>
-                </span>
-              </div>
-              <button className="btn-primary" style={{ background: '#ef4444' }} onClick={handleLogout}>Logout</button>
-            </div>
-          </div>
-        </div>
-      </header>
+      {error && <p role="alert">{error}</p>}
+      <h1 className="page-title">Dashboard</h1>
       {/* Main Content */}
       <main>
         {/* Stats Cards */}
@@ -253,8 +218,8 @@ export default function Dashboard() {
                   <tbody>
                     {invoices.slice(0, 5).map((invoice) => (
                       <tr key={invoice.id} style={{ background: '#fff', borderBottom: '1px solid #e5e7eb', transition: 'background 0.2s' }}>
-                        <td style={{ padding: '16px 24px', fontWeight: 600, color: '#1a202c' }}>#{invoice.invoiceNumber || invoice.id.slice(-6)}</td>
-                        <td style={{ padding: '16px 24px', color: '#1a202c' }}>{invoice.clientName || 'Unknown Client'}</td>
+                        <td style={{ padding: '16px 24px', fontWeight: 600, color: '#1a202c' }}><Link to={`/invoices/${invoice.id}`}>#{invoice.invoiceNumber || invoice.id.slice(-6)}</Link></td>
+                        <td style={{ padding: '16px 24px', color: '#1a202c' }}>{invoice.recipient?.name || invoice.clientName || 'Unknown Client'}</td>
                         <td style={{ padding: '16px 24px', color: '#1a202c' }}>{formatCurrency(invoice.total || 0)}</td>
                         <td style={{ padding: '16px 24px' }}>
                           <span style={{ display: 'inline-block', padding: '4px 12px', fontSize: 13, fontWeight: 600, borderRadius: 12, background: invoice.status === 'paid' ? '#bbf7d0' : invoice.status === 'pending' ? '#fef9c3' : '#fee2e2', color: invoice.status === 'paid' ? '#15803d' : invoice.status === 'pending' ? '#b45309' : '#b91c1c' }}>

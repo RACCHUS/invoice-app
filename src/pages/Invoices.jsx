@@ -3,10 +3,12 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { invoiceService } from '../services/InvoiceServices';
 import InvoiceTable from '../components/InvoiceTable';
+import { isQuote, normalizeInvoice } from '../utils/invoiceData';
 
 export default function Invoices() {
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
   const [dateRange, setDateRange] = useState({ from: '', to: '' });
@@ -24,10 +26,10 @@ export default function Invoices() {
     try {
       setLoading(true);
       const fetchedInvoices = await invoiceService.getInvoices(currentUser.uid);
-      setInvoices(fetchedInvoices);
-      console.log('Invoices state:', fetchedInvoices); // Debug log
+      setInvoices(fetchedInvoices.filter(invoice => !isQuote(invoice)));
     } catch (error) {
       console.error('Error fetching invoices:', error);
+      setError(`Failed to load invoices: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -61,7 +63,7 @@ export default function Invoices() {
     if (search) {
       const s = search.toLowerCase();
       if (!(
-        (invoice.invoiceNumber && invoice.invoiceNumber.toLowerCase().includes(s)) ||
+        (invoice.invoiceNumber && String(invoice.invoiceNumber).toLowerCase().includes(s)) ||
         (invoice.recipient?.name && invoice.recipient.name.toLowerCase().includes(s)) ||
         (invoice.clientName && invoice.clientName.toLowerCase().includes(s)) ||
         (invoice.recipient?.email && invoice.recipient.email.toLowerCase().includes(s)) ||
@@ -127,6 +129,7 @@ export default function Invoices() {
       </header>
       {/* Main Content */}
       <main className="app-main">
+        {error && <p role="alert">{error}</p>}
         {/* Search and Filters */}
         <div className="filter-card">
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1em', alignItems: 'center', marginBottom: 16 }}>
@@ -217,6 +220,7 @@ export default function Invoices() {
         <div className="table-card">
           <InvoiceTable 
             invoices={sortedInvoices} 
+            onStatusChange={(id, status) => setInvoices(prev => prev.map(invoice => invoice.id === id ? normalizeInvoice({ ...invoice, status }) : invoice))}
             onDelete={handleDeleteInvoice}
           />
         </div>

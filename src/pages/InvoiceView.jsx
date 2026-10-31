@@ -1,13 +1,16 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import { invoiceService } from '../services/InvoiceServices';
 import { generateInvoicePDF } from '../utils/pdfGenerator';
+import { locationGroupHeading, normalizeInvoice } from '../utils/invoiceData';
 
 export default function InvoiceView() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [invoice, setInvoice] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     const fetchInvoice = async () => {
@@ -16,13 +19,30 @@ export default function InvoiceView() {
         if (!inv) navigate('/invoices');
         setInvoice(inv);
       } catch (e) {
-        navigate('/invoices');
+        console.error('Error loading invoice:', e);
+        setError(`Failed to load invoice: ${e.message}`);
       } finally {
         setLoading(false);
       }
     };
     fetchInvoice();
   }, [id, navigate]);
+
+  const handlePayment = async () => {
+    if (saving) return;
+    setSaving(true);
+    setError('');
+    const status = invoice.status === 'paid' ? 'pending' : 'paid';
+    try {
+      await invoiceService.updateInvoice(id, { status });
+      setInvoice(prev => normalizeInvoice({ ...prev, status }));
+    } catch (error) {
+      console.error('Error updating payment status:', error);
+      setError(`Failed to update payment status: ${error.message}`);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const handleExportPDF = async () => {
     try {
@@ -36,38 +56,38 @@ export default function InvoiceView() {
   };
 
   const handleConvertToInvoice = async () => {
+    if (saving) return;
     if (!confirm('Convert this quote to an invoice? This action cannot be undone.')) return;
-    
+    setSaving(true);
     try {
-      const updatedData = {
-        ...invoice,
-        type: 'invoice',
-        status: 'pending',
-        // Generate new invoice number if needed
-        invoiceNumber: invoice.invoiceNumber || `INV-${Date.now().toString().slice(-6)}`
-      };
-      delete updatedData.id; // Remove id from update data
-      
-      await invoiceService.updateInvoice(id, updatedData);
-      setInvoice(updatedData);
+      const updatedData = await invoiceService.convertToInvoice(invoice);
+      setInvoice(prev => normalizeInvoice({ ...prev, ...updatedData }));
       alert('Quote successfully converted to invoice!');
     } catch (error) {
       console.error('Error converting quote:', error);
       alert('Failed to convert quote to invoice.');
+    } finally {
+      setSaving(false);
     }
   };
 
   if (loading) return <div className="centered-screen"><div className="spinner"></div></div>;
-  if (!invoice) return null;
+  if (!invoice) return <p role="alert">{error || 'Invoice not found.'}</p>;
 
   return (
     <div className="container">
+      <Link to="/invoices">Back to invoices</Link>
+      {error && <p role="alert">{error}</p>}
       <div className="invoice-details-card">
         <div className="invoice-details-header">
           <h2 className="page-title">{(invoice.type === 'quote' || invoice.status === 'quote') ? 'Quote' : 'Invoice'} #{invoice.invoiceNumber}</h2>
-          <div style={{ display: 'flex', gap: '1rem' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>
+            {invoice.type !== 'quote' && invoice.status !== 'quote' && <button className="btn-primary" disabled={saving} onClick={handlePayment}>
+              {saving ? 'Saving...' : invoice.status === 'paid' ? 'Mark Unpaid' : 'Mark Paid'}
+            </button>}
+            <Link className="btn-secondary" to={`/${invoice.type === 'quote' || invoice.status === 'quote' ? 'quotes' : 'invoices'}/${id}/edit`}>Edit</Link>
             {(invoice.type === 'quote' || invoice.status === 'quote') && (
-              <button className="btn-secondary" onClick={handleConvertToInvoice}>
+              <button className="btn-secondary" disabled={saving} onClick={handleConvertToInvoice}>
                 Convert to Invoice
               </button>
             )}
@@ -92,6 +112,10 @@ export default function InvoiceView() {
             {invoice.recipient?.address}<br />
             {invoice.recipient?.email}
           </div>
+          {invoice.jobSite && <div className="invoice-details-section">
+            <strong>Job Site:</strong><br />
+            {invoice.jobSite}
+          </div>}
           <div className="invoice-details-section">
             <strong>Status:</strong> {invoice.status}
           </div>
@@ -109,21 +133,26 @@ export default function InvoiceView() {
               </thead>
               <tbody>
                 {invoice.lineItems?.map((item, idx) => (
-                  <tr key={idx}>
-                    <td className="wrap-cell">{item.description}</td>
-                    <td>{item.quantity}</td>
-                    <td>${item.unitPrice}</td>
-                    <td>{item.tax || 0}</td>
-                    <td>${(item.quantity * item.unitPrice * (1 + (item.tax || 0) / 100)).toFixed(2)}</td>
+                  <React.Fragment key={idx}>
+                  {locationGroupHeading(invoice.lineItems, idx) && <tr className="location-row">
+                    <td colSpan={5}><strong>{locationGroupHeading(invoice.lineItems, idx)}</strong></td>
+                  </tr>}
+                  <tr>
+                    <td data-label="Description" className="wrap-cell">{item.description}</td>
+                    <td data-label="Qty">{item.quantity}</td>
+                    <td data-label="Unit Price">${item.unitPrice.toFixed(2)}</td>
+                    <td data-label="Tax (%)">{item.tax || 0}</td>
+                    <td data-label="Total">${(item.quantity * item.unitPrice * (1 + (item.tax || 0) / 100)).toFixed(2)}</td>
                   </tr>
+                  </React.Fragment>
                 ))}
               </tbody>
             </table>
           </div>
           <div className="invoice-details-section" style={{ textAlign: 'right', marginTop: 16 }}>
-            <strong>Subtotal:</strong> ${invoice.lineItems?.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0).toFixed(2)}<br />
-            <strong>Tax:</strong> ${invoice.lineItems?.reduce((sum, item) => sum + (item.quantity * item.unitPrice * (item.tax || 0) / 100), 0).toFixed(2)}<br />
-            <strong>Total:</strong> ${invoice.lineItems?.reduce((sum, item) => sum + item.quantity * item.unitPrice * (1 + (item.tax || 0) / 100), 0).toFixed(2)}
+            <strong>Subtotal:</strong> ${(invoice.subtotal || 0).toFixed(2)}<br />
+            <strong>Tax:</strong> ${(invoice.totalTax || 0).toFixed(2)}<br />
+            <strong>Total:</strong> ${(invoice.total || 0).toFixed(2)}
           </div>
           {invoice.notes && (
             <div className="invoice-details-section">

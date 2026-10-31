@@ -1,10 +1,28 @@
-import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { generateInvoicePDF } from '../utils/pdfGenerator';
 import { invoiceService } from '../services/InvoiceServices';
+import { formatDate } from '../utils/formatters';
 
-export default function InvoiceTable({ invoices, onDelete, onConvertToInvoice }) {
-  const navigate = useNavigate();
+export default function InvoiceTable({ invoices, onDelete, onConvertToInvoice, onStatusChange, documentType = 'invoice' }) {
+  const [busyId, setBusyId] = useState(null);
+  const [error, setError] = useState('');
+
+  const handlePayment = async invoice => {
+    if (busyId) return;
+    setBusyId(invoice.id);
+    setError('');
+    const status = invoice.status === 'paid' ? 'pending' : 'paid';
+    try {
+      await invoiceService.updateInvoice(invoice.id, { status });
+      onStatusChange?.(invoice.id, status);
+    } catch (error) {
+      console.error('Error updating payment status:', error);
+      setError(`Failed to update payment status: ${error.message}`);
+    } finally {
+      setBusyId(null);
+    }
+  };
 
   const handleExportPDF = async (invoice) => {
     try {
@@ -18,18 +36,11 @@ export default function InvoiceTable({ invoices, onDelete, onConvertToInvoice })
   };
 
   const handleConvertToInvoice = async (invoice) => {
+    if (busyId) return;
     if (!confirm('Convert this quote to an invoice? This action cannot be undone.')) return;
-    
+    setBusyId(invoice.id);
     try {
-      const updatedData = {
-        ...invoice,
-        type: 'invoice',
-        status: 'pending',
-        invoiceNumber: invoice.invoiceNumber || `INV-${Date.now().toString().slice(-6)}`
-      };
-      delete updatedData.id;
-      
-      await invoiceService.updateInvoice(invoice.id, updatedData);
+      const updatedData = await invoiceService.convertToInvoice(invoice);
       
       // Notify parent component about the conversion
       if (onConvertToInvoice) {
@@ -40,6 +51,8 @@ export default function InvoiceTable({ invoices, onDelete, onConvertToInvoice })
     } catch (error) {
       console.error('Error converting quote:', error);
       alert('Failed to convert quote to invoice.');
+    } finally {
+      setBusyId(null);
     }
   };
 
@@ -48,12 +61,6 @@ export default function InvoiceTable({ invoices, onDelete, onConvertToInvoice })
       style: 'currency',
       currency: 'USD'
     }).format(amount);
-  };
-
-  const formatDate = (date) => {
-    if (!date) return 'N/A';
-    const dateObj = date.seconds ? new Date(date.seconds * 1000) : new Date(date);
-    return dateObj.toLocaleDateString();
   };
 
   const getStatusClass = (status, type) => {
@@ -80,12 +87,12 @@ export default function InvoiceTable({ invoices, onDelete, onConvertToInvoice })
         <svg className="table-empty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
         </svg>
-        <p className="table-empty-text">No invoices found</p>
+        <p className="table-empty-text">No {documentType === 'quote' ? 'quotes' : 'invoices'} found</p>
         <Link
-          to="/invoices/new"
+          to={documentType === 'quote' ? '/quotes/new' : '/invoices/new'}
           className="primary-btn"
         >
-          Create Your First Invoice
+          Create {documentType === 'quote' ? 'Quote' : 'Invoice'}
         </Link>
       </div>
     );
@@ -93,10 +100,11 @@ export default function InvoiceTable({ invoices, onDelete, onConvertToInvoice })
 
   return (
     <div className="table-responsive">
+      {error && <p role="alert">{error}</p>}
       <table className="invoice-table">
         <thead>
           <tr>
-            <th>Invoice #</th>
+            <th>{documentType === 'quote' ? 'Quote' : 'Invoice'} #</th>
             <th>Client</th>
             <th>Amount</th>
             <th>Status</th>
@@ -110,8 +118,10 @@ export default function InvoiceTable({ invoices, onDelete, onConvertToInvoice })
             <tr key={invoice.id}>
               <td data-label="Invoice #">#{invoice.invoiceNumber || invoice.id.slice(-6)}</td>
               <td data-label="Client">
+                <div className="client-details">
                 <div className="client-name">{invoice.recipient?.name || invoice.clientName || 'Unknown Client'}</div>
                 <div className="client-email">{invoice.recipient?.email || invoice.clientEmail}</div>
+                </div>
               </td>
               <td data-label="Amount">{formatCurrency(invoice.total || 0)}</td>
               <td data-label="Status">
@@ -123,6 +133,11 @@ export default function InvoiceTable({ invoices, onDelete, onConvertToInvoice })
               <td data-label="Due Date">{formatDate(invoice.dueDate)}</td>
               <td data-label="Actions" className="text-right">
                 <div className="table-actions">
+                  {invoice.type !== 'quote' && invoice.status !== 'quote' && onStatusChange && (
+                    <button className="action-btn edit" disabled={busyId !== null} onClick={() => handlePayment(invoice)}>
+                      {busyId === invoice.id ? 'Saving...' : invoice.status === 'paid' ? 'Mark Unpaid' : 'Mark Paid'}
+                    </button>
+                  )}
                   <button
                     onClick={() => handleExportPDF(invoice)}
                     className="action-btn export"
@@ -134,6 +149,7 @@ export default function InvoiceTable({ invoices, onDelete, onConvertToInvoice })
                   {(invoice.type === 'quote' || invoice.status === 'quote') && (
                     <button
                       onClick={() => handleConvertToInvoice(invoice)}
+                      disabled={busyId !== null}
                       className="action-btn convert"
                       title="Convert to Invoice"
                       style={{ marginRight: 8 }}
